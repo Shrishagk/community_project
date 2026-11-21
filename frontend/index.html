@@ -1,0 +1,1456 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EarlyWatch · Predicting Course Failure Early — Team B-2, DSCE AI&amp;ML</title>
+<meta name="description" content="Live dashboard for the SDG-4 project Predicting Course Failure Early: recall-first Decision Tree &amp; Random Forest on UCI Student Performance (649 students), mid-term watchlist for teachers.">
+<style>
+/* ================= Aurora Glass design system ================= */
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth}
+:root{
+  --bg:#060a16; --bg2:#0a1124;
+  --card:rgba(255,255,255,.045); --card2:rgba(255,255,255,.075);
+  --border:rgba(255,255,255,.09); --border2:rgba(255,255,255,.16);
+  --text:#e8ecf8; --muted:#94a1c0; --faint:#5d6a8c;
+  --accent:#6d7cff; --accent2:#22d3ee; --violet:#a78bfa;
+  --good:#34d399; --warn:#fbbf24; --bad:#f87171;
+  --badbg:rgba(248,113,113,.13); --goodbg:rgba(52,211,153,.13); --warnbg:rgba(251,191,36,.13);
+  --accentbg:rgba(109,124,255,.14);
+  --ease:cubic-bezier(.2,.7,.3,1);
+  --r:20px; --r-sm:14px;
+  --shadow:0 10px 40px rgba(2,6,20,.45);
+  --grad:linear-gradient(135deg,#6d7cff,#22d3ee);
+}
+html[data-theme="light"]{
+  --bg:#f2f5fd; --bg2:#e8edf9;
+  --card:rgba(255,255,255,.75); --card2:rgba(255,255,255,.95);
+  --border:rgba(16,22,43,.10); --border2:rgba(16,22,43,.2);
+  --text:#101731; --muted:#4c5878; --faint:#8b95b3;
+  --accent:#4f5ee0; --accent2:#0891b2; --violet:#7c5cf0;
+  --good:#0d9e6f; --warn:#b45309; --bad:#dc2626;
+  --badbg:rgba(220,38,38,.09); --goodbg:rgba(13,158,111,.1); --warnbg:rgba(180,83,9,.1);
+  --accentbg:rgba(79,94,224,.09);
+  --shadow:0 10px 40px rgba(31,45,91,.12);
+}
+body{
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;
+  line-height:1.65; overflow-x:hidden; -webkit-font-smoothing:antialiased;
+}
+::selection{background:rgba(109,124,255,.35)}
+a{color:var(--accent2)}
+:focus-visible{outline:2px solid var(--accent2);outline-offset:2px;border-radius:6px}
+button{font:inherit;color:inherit}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+  html{scroll-behavior:auto}
+}
+
+/* ---------- ambient layers ---------- */
+.aurora{position:fixed;inset:0;z-index:-3;overflow:hidden;filter:blur(100px);opacity:.55;pointer-events:none}
+.aurora i{position:absolute;border-radius:50%;will-change:transform}
+.aurora i:nth-child(1){width:46vw;height:46vw;left:-12vw;top:-14vh;background:#3853c9;animation:drift 28s ease-in-out infinite alternate}
+.aurora i:nth-child(2){width:38vw;height:38vw;right:-10vw;top:6vh;background:#0e7490;animation:drift 34s ease-in-out infinite alternate-reverse}
+.aurora i:nth-child(3){width:30vw;height:30vw;left:24vw;bottom:-16vh;background:#6d28d9;animation:drift 40s ease-in-out infinite alternate}
+html[data-theme="light"] .aurora{opacity:.35}
+@keyframes drift{from{transform:translate3d(0,0,0) scale(1)}to{transform:translate3d(7vw,-5vh,0) scale(1.18)}}
+.gridlayer{position:fixed;inset:0;z-index:-2;pointer-events:none;
+  background-image:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);
+  background-size:44px 44px;mask-image:radial-gradient(75% 60% at 50% 30%,#000 30%,transparent 100%)}
+html[data-theme="light"] .gridlayer{background-image:linear-gradient(rgba(16,22,43,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(16,22,43,.05) 1px,transparent 1px)}
+
+/* ---------- chrome ---------- */
+.progress{position:fixed;top:0;left:0;height:3px;width:0;z-index:70;background:var(--grad);border-radius:0 3px 3px 0}
+.nav{position:fixed;top:0;left:0;right:0;z-index:60;transition:background .35s,border-color .35s,backdrop-filter .35s;border-bottom:1px solid transparent}
+.nav.scrolled{background:color-mix(in srgb,var(--bg) 74%,transparent);backdrop-filter:blur(16px);border-bottom-color:var(--border)}
+.nav-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:18px;padding:14px 24px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.05rem;letter-spacing:-.01em;color:var(--text);text-decoration:none;white-space:nowrap}
+.brand .mark{width:34px;height:34px;border-radius:11px;background:var(--grad);display:grid;place-items:center;color:#04070f;flex:none}
+.brand small{display:block;font-size:.62rem;font-weight:600;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;line-height:1.1}
+.nav-links{display:flex;gap:4px;margin-left:auto}
+.nav-links a{color:var(--muted);text-decoration:none;font-size:.88rem;font-weight:600;padding:8px 13px;border-radius:999px;transition:color .2s,background .2s}
+.nav-links a:hover{color:var(--text);background:var(--card2)}
+.nav-links a[aria-current="true"]{color:var(--text);background:var(--accentbg)}
+.nav-actions{display:flex;align-items:center;gap:10px;margin-left:8px}
+.icon-btn{width:38px;height:38px;border-radius:12px;border:1px solid var(--border);background:var(--card);display:grid;place-items:center;cursor:pointer;transition:transform .2s,background .2s;flex:none}
+.icon-btn:hover{transform:translateY(-2px);background:var(--card2)}
+.icon-btn svg{width:18px;height:18px}
+#menuBtn{display:none}
+.mobile-menu{display:none}
+@media (max-width:960px){
+  .nav-links{display:none}
+  #menuBtn{display:grid}
+  .brand small{display:none}
+  .mobile-menu{display:none;position:fixed;top:64px;left:12px;right:12px;z-index:59;background:color-mix(in srgb,var(--bg2) 92%,transparent);backdrop-filter:blur(18px);border:1px solid var(--border);border-radius:18px;padding:10px;box-shadow:var(--shadow)}
+  .mobile-menu.open{display:block}
+  .mobile-menu a{display:block;padding:12px 16px;border-radius:12px;color:var(--text);text-decoration:none;font-weight:600}
+  .mobile-menu a:hover{background:var(--card2)}
+}
+
+/* ---------- layout primitives ---------- */
+section{padding:clamp(68px,9vw,118px) 24px;position:relative}
+.wrap{max-width:1200px;margin:0 auto}
+.wrap-sm{max-width:880px;margin:0 auto}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:.74rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--accent2)}
+.eyebrow::before{content:"";width:22px;height:2px;background:var(--grad);border-radius:2px}
+.section-title{font-size:clamp(1.75rem,3.4vw,2.55rem);font-weight:850;letter-spacing:-.025em;line-height:1.12;margin:10px 0 12px}
+.lede{color:var(--muted);max-width:66ch;font-size:clamp(.98rem,1.4vw,1.08rem)}
+.glass{background:var(--card);border:1px solid var(--border);border-radius:var(--r);backdrop-filter:blur(12px)}
+.grad-text{background:linear-gradient(92deg,#9dabff,var(--accent2) 55%,var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent}
+html[data-theme="light"] .grad-text{background:linear-gradient(92deg,#4f5ee0,#0891b2 55%,#7c5cf0);-webkit-background-clip:text;background-clip:text}
+.head-row{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:34px}
+
+/* reveal motion */
+[data-reveal]{opacity:0;transform:translateY(26px);transition:opacity .75s var(--ease),transform .75s var(--ease)}
+[data-reveal].in{opacity:1;transform:none}
+
+/* ---------- buttons / chips ---------- */
+.btn{display:inline-flex;align-items:center;gap:9px;padding:12px 22px;border-radius:999px;font-weight:750;font-size:.94rem;text-decoration:none;border:1px solid transparent;cursor:pointer;transition:transform .2s,box-shadow .2s,background .2s;white-space:nowrap}
+.btn svg{width:17px;height:17px}
+.btn.primary{background:var(--grad);color:#04070f;box-shadow:0 8px 30px rgba(109,124,255,.32)}
+.btn.primary:hover{transform:translateY(-2px);box-shadow:0 12px 36px rgba(34,211,238,.4)}
+.btn.ghost{border-color:var(--border2);background:var(--card);color:var(--text)}
+.btn.ghost:hover{transform:translateY(-2px);background:var(--card2)}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;font-size:.74rem;font-weight:650;border:1px solid var(--border);background:var(--card2);color:var(--muted)}
+.chip.high{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 45%,transparent);background:var(--badbg)}
+.chip.med{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 45%,transparent);background:var(--warnbg)}
+.chip.ok{color:var(--good);border-color:color-mix(in srgb,var(--good) 45%,transparent);background:var(--goodbg)}
+.chip.info{color:var(--accent2);border-color:color-mix(in srgb,var(--accent2) 45%,transparent);background:var(--accentbg)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--good);flex:none;animation:pulse 2.2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(52,211,153,.5)}100%{box-shadow:0 0 0 11px rgba(52,211,153,0)}}
+
+/* ---------- hero ---------- */
+#hero{min-height:100svh;display:flex;align-items:center;overflow:hidden;padding:110px 24px 70px}
+#hero3d{position:absolute;inset:0;width:100%;height:100%;cursor:grab;touch-action:pan-y}
+#hero3d:active{cursor:grabbing}
+.hero-scrim{position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,var(--bg) 4%,color-mix(in srgb,var(--bg) 55%,transparent) 34%,transparent 62%)}
+.hero-scrim::after{content:"";position:absolute;inset:auto 0 0 0;height:26vh;background:linear-gradient(180deg,transparent,var(--bg))}
+.hero-inner{position:relative;z-index:2;max-width:1200px;margin:0 auto;width:100%}
+.hero-badges{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:22px}
+h1{font-size:clamp(2.5rem,6.2vw,4.5rem);line-height:1.04;font-weight:900;letter-spacing:-.035em;margin:0 0 18px;max-width:15ch}
+.hero-sub{color:var(--muted);font-size:clamp(1rem,1.6vw,1.18rem);max-width:56ch;margin:0 0 26px}
+.hero-cta{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:38px}
+.hero-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;max-width:820px}
+@media (max-width:720px){.hero-kpis{grid-template-columns:repeat(2,1fr)}}
+.hkpi{background:var(--card);border:1px solid var(--border);border-radius:var(--r-sm);padding:14px 16px;backdrop-filter:blur(10px)}
+.hkpi .n{font-size:clamp(1.5rem,3vw,2.1rem);font-weight:850;letter-spacing:-.02em;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hkpi .l{font-size:.74rem;color:var(--muted);font-weight:600;margin-top:2px}
+.hero-ticker{display:inline-flex;align-items:center;gap:10px;margin-top:30px;font-size:.84rem;color:var(--muted);background:var(--card);border:1px solid var(--border);border-radius:999px;padding:8px 16px;backdrop-filter:blur(10px)}
+.hero-ticker b{color:var(--text);font-weight:700;transition:opacity .4s}
+.hero-hint{position:absolute;right:24px;bottom:18px;z-index:2;font-size:.72rem;color:var(--faint);display:flex;gap:6px;align-items:center}
+@media (max-width:640px){.hero-hint{display:none}}
+.hero-tip{position:absolute;z-index:3;pointer-events:none;background:color-mix(in srgb,var(--bg2) 88%,transparent);border:1px solid var(--border2);border-radius:12px;padding:8px 12px;font-size:.78rem;line-height:1.45;box-shadow:var(--shadow);opacity:0;transition:opacity .15s;backdrop-filter:blur(8px);white-space:nowrap}
+.legend{position:absolute;z-index:2;left:24px;bottom:18px;display:flex;gap:10px;font-size:.74rem;color:var(--muted)}
+@media (max-width:640px){.legend{bottom:auto;top:84px}}
+.legend i{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:5px}
+
+/* ---------- cards / grids ---------- */
+.grid{display:grid;gap:16px}
+.drivers-grid{grid-template-columns:1.2fr .8fr}
+@media (max-width:900px){.drivers-grid{grid-template-columns:1fr}}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media (max-width:960px){.g3,.g4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:620px){.g2,.g3,.g4{grid-template-columns:1fr}}
+.card{padding:24px}
+.card h3{margin:0 0 8px;font-size:1.06rem;font-weight:750;letter-spacing:-.01em}
+.card p{margin:0;color:var(--muted);font-size:.92rem}
+.ico{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;margin-bottom:14px;flex:none}
+.ico svg{width:20px;height:20px}
+.ico.red{background:var(--badbg);color:var(--bad)}
+.ico.amber{background:var(--warnbg);color:var(--warn)}
+.ico.green{background:var(--goodbg);color:var(--good)}
+.ico.blue{background:var(--accentbg);color:var(--accent)}
+.ico.cyan{background:rgba(34,211,238,.13);color:var(--accent2)}
+.ico.violet{background:rgba(167,139,250,.14);color:var(--violet)}
+
+/* ---------- KPI / results ---------- */
+.seg{display:inline-flex;background:var(--card);border:1px solid var(--border);border-radius:999px;padding:4px;gap:4px}
+.seg button{border:0;background:transparent;color:var(--muted);font-weight:650;font-size:.85rem;padding:8px 16px;border-radius:999px;cursor:pointer;transition:background .25s,color .25s;white-space:nowrap}
+.seg button[aria-pressed="true"]{background:var(--grad);color:#04070f}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:26px 0}
+@media (max-width:960px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:520px){.kpis{grid-template-columns:1fr}}
+.kpi{padding:20px 22px;position:relative;overflow:hidden}
+.kpi::after{content:"";position:absolute;inset:0 0 auto 0;height:2px;background:var(--grad);opacity:.7}
+.kpi .num{font-size:clamp(1.9rem,3.4vw,2.7rem);font-weight:900;letter-spacing:-.03em;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.kpi .num.bad{background:linear-gradient(135deg,var(--bad),var(--warn));-webkit-background-clip:text;background-clip:text;color:transparent}
+.kpi .lab{font-size:.8rem;color:var(--muted);font-weight:650;margin-top:4px}
+.kpi .sub{font-size:.72rem;color:var(--faint);margin-top:2px}
+.pop{animation:pop .45s var(--ease)}
+@keyframes pop{0%{transform:scale(.92);opacity:.4}100%{transform:scale(1);opacity:1}}
+
+.cm-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:8px}
+@media (max-width:820px){.cm-grid{grid-template-columns:1fr}}
+.cm{padding:22px}
+.cm h4{margin:0 0 4px;font-size:.95rem;font-weight:750}
+.cm .cm-sub{font-size:.75rem;color:var(--faint);margin-bottom:14px}
+.cm-rows{display:grid;grid-template-columns:auto 1fr 1fr;grid-auto-rows:minmax(72px,auto);gap:8px;align-items:stretch}
+.cm-corner{display:flex;align-items:center;justify-content:center;font-size:.68rem;color:var(--faint);font-weight:600}
+.cm-side{display:flex;align-items:center;justify-content:center;font-size:.7rem;color:var(--muted);font-weight:650;text-align:center;padding:4px}
+.cm-cell{border-radius:var(--r-sm);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:1px solid transparent}
+.cm-cell .v{font-size:clamp(1.4rem,2.6vw,2rem);font-weight:900;letter-spacing:-.02em}
+.cm-cell .k{font-size:.68rem;font-weight:650;opacity:.85}
+.cm-cell.tp{background:var(--goodbg);color:var(--good);border-color:color-mix(in srgb,var(--good) 30%,transparent)}
+.cm-cell.fn{background:var(--badbg);color:var(--bad);border-color:color-mix(in srgb,var(--bad) 30%,transparent)}
+.cm-cell.fp{background:var(--warnbg);color:var(--warn);border-color:color-mix(in srgb,var(--warn) 30%,transparent)}
+.cm-cell.tn{background:var(--card2);color:var(--muted);border-color:var(--border)}
+
+.table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--card)}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th,td{padding:12px 16px;text-align:left;white-space:nowrap}
+thead th{font-size:.7rem;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);background:var(--card2);border-bottom:1px solid var(--border);font-weight:700}
+tbody td{border-bottom:1px solid var(--border)}
+tbody tr:last-child td{border-bottom:0}
+tbody tr{transition:background .2s}
+tbody tr:hover{background:var(--card2)}
+td.hl,th.hl{color:var(--accent2);font-weight:750}
+.sortable{cursor:pointer;user-select:none}
+.sortable:hover{color:var(--text)}
+.note{font-size:.78rem;color:var(--faint);margin-top:10px}
+.note b{color:var(--muted)}
+
+/* ---------- threshold explorer ---------- */
+.explorer{padding:26px}
+.explorer-top{display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.slider-row{display:flex;align-items:center;gap:16px;margin:14px 0 6px}
+input[type="range"]{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:999px;background:linear-gradient(90deg,var(--accent) var(--fill,50%),color-mix(in srgb,var(--border) 80%,transparent) var(--fill,50%));cursor:pointer;outline-offset:4px}
+input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#fff;border:4px solid var(--accent);box-shadow:0 2px 10px rgba(0,0,0,.35);cursor:grab}
+input[type="range"]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:#fff;border:4px solid var(--accent);cursor:grab}
+.explorer-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:14px}
+@media (max-width:620px){.explorer-metrics{grid-template-columns:repeat(2,1fr)}}
+.xmet{background:var(--card2);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px 14px}
+.xmet .v{font-weight:850;font-size:1.25rem;letter-spacing:-.02em}
+.xmet .l{font-size:.7rem;color:var(--faint);font-weight:650}
+.chart-box{margin-top:18px;background:var(--card2);border:1px solid var(--border);border-radius:var(--r-sm);padding:14px}
+#sweepSvg{width:100%;height:auto;display:block}
+.chart-legend{display:flex;gap:16px;flex-wrap:wrap;font-size:.72rem;color:var(--muted);margin-top:8px}
+.chart-legend i{display:inline-block;width:16px;height:3px;border-radius:2px;margin-right:6px;vertical-align:middle}
+
+/* ---------- bars / importance ---------- */
+.imp-row{display:grid;grid-template-columns:200px 1fr 52px;gap:12px;align-items:center;padding:7px 0}
+@media (max-width:620px){.imp-row{grid-template-columns:150px 1fr 44px}}
+.imp-row .lb{font-size:.83rem;color:var(--muted);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar{display:block;height:10px;border-radius:999px;background:color-mix(in srgb,var(--border) 75%,transparent);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:inherit;width:0;background:var(--grad);transition:width 1.1s var(--ease)}
+.imp-row .val{font-size:.8rem;font-weight:750;text-align:right;color:var(--text)}
+
+.hist{display:flex;align-items:flex-end;gap:3px;height:220px;padding:8px 4px 0}
+.hist .col{flex:1;display:flex;flex-direction:column-reverse;border-radius:6px 6px 2px 2px;overflow:hidden;min-width:0;transition:filter .2s}
+.hist .col:hover{filter:brightness(1.25)}
+.hist .seg-f{background:linear-gradient(180deg,#f87171,#ef4444)}
+.hist .seg-p{background:linear-gradient(180deg,#22d3ee,#4f5ee0)}
+.hist-x{display:flex;gap:3px;margin-top:6px}
+.hist-x span{flex:1;text-align:center;font-size:.6rem;color:var(--faint);min-width:0;overflow:visible;white-space:nowrap}
+.hist-readout{font-size:.8rem;color:var(--muted);margin-top:12px;min-height:1.4em}
+.hist-readout b{color:var(--text)}
+
+/* ---------- watchlist ---------- */
+.wl-tools{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+.search{flex:1;min-width:220px;display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--border);border-radius:999px;padding:10px 18px}
+.search svg{width:16px;height:16px;color:var(--faint);flex:none}
+.search input{flex:1;background:transparent;border:0;outline:0;color:var(--text);font:inherit;font-size:.92rem;min-width:0}
+.search input::placeholder{color:var(--faint)}
+.wl-meta{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:.82rem;color:var(--muted);margin-bottom:14px}
+.riskbar{width:86px;height:8px;border-radius:999px;background:color-mix(in srgb,var(--border) 80%,transparent);overflow:hidden;display:inline-block;vertical-align:middle;margin-right:8px}
+.riskbar i{display:block;height:100%;border-radius:inherit}
+.why{display:flex;flex-wrap:wrap;gap:5px;max-width:420px;white-space:normal}
+.why .chip{font-size:.68rem;padding:3px 9px}
+td.mono,th.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.84rem}
+.empty{padding:40px;text-align:center;color:var(--faint);font-size:.9rem}
+
+/* ---------- simulator ---------- */
+.sim{display:grid;grid-template-columns:1.15fr .85fr;gap:20px}
+@media (max-width:900px){.sim{grid-template-columns:1fr}}
+.sim-form{padding:24px}
+.sim-group{margin-bottom:20px}
+.sim-group h4{margin:0 0 12px;font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;color:var(--faint)}
+.sim-row{display:grid;grid-template-columns:150px 1fr 44px;gap:12px;align-items:center;margin-bottom:12px}
+.sim-row label{font-size:.82rem;color:var(--muted);font-weight:600}
+.sim-row output{font-size:.8rem;font-weight:800;text-align:right;color:var(--accent2)}
+.sim select{width:100%;background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:8px 10px;font:inherit;font-size:.85rem;outline:0}
+.sim-out{padding:24px;display:flex;flex-direction:column;align-items:center;text-align:center;position:relative;overflow:hidden}
+.sim-out::before{content:"";position:absolute;inset:0;background:radial-gradient(80% 55% at 50% 0%,var(--accentbg),transparent 70%);pointer-events:none}
+#gauge{width:min(260px,100%);height:auto}
+.gauge-num{font-size:clamp(2.4rem,5vw,3.4rem);font-weight:900;letter-spacing:-.03em;margin-top:-118px;position:relative}
+.gauge-cap{font-size:.72rem;color:var(--faint);font-weight:650;letter-spacing:.1em;text-transform:uppercase;position:relative;margin-bottom:14px}
+.sim-tier{margin:6px 0 16px}
+.path{font-size:.78rem;color:var(--muted);background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:10px 14px;width:100%;text-align:left;line-height:1.5}
+.path b{color:var(--accent2)}
+@media (max-width:900px){.gauge-num{margin-top:-100px}}
+
+/* ---------- snap galleries / carousel ---------- */
+.snap{display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;padding:6px 4px 22px;scrollbar-width:thin;scrollbar-color:var(--border2) transparent}
+.snap::-webkit-scrollbar{height:8px}
+.snap::-webkit-scrollbar-thumb{background:var(--border2);border-radius:99px}
+.snap>*{scroll-snap-align:start;flex:0 0 min(330px,82vw)}
+.snap-nav{display:flex;gap:10px;align-items:center}
+.step{padding:22px;position:relative;overflow:hidden}
+.step .n{position:absolute;right:14px;top:2px;font-size:4.6rem;font-weight:900;letter-spacing:-.05em;color:transparent;-webkit-text-stroke:1px var(--border2);line-height:1}
+.step h3{margin:14px 0 8px;font-size:1rem}
+.step p{font-size:.85rem;color:var(--muted)}
+.carousel{position:relative}
+.car-track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:16px;padding:6px 4px 22px;scrollbar-width:none}
+.car-track::-webkit-scrollbar{display:none}
+.car-track>*{scroll-snap-align:center;flex:0 0 min(420px,86vw)}
+.mcard{padding:24px;position:relative;overflow:hidden}
+.mcard::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:var(--grad)}
+.mcard.violet::before{background:linear-gradient(90deg,var(--violet),#f472b6)}
+.mcard.amber::before{background:linear-gradient(90deg,var(--warn),var(--bad))}
+.mcard.cyan::before{background:linear-gradient(90deg,var(--accent2),var(--good))}
+.mcard .tag{font-size:.68rem;font-weight:750;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
+.mcard h3{margin:6px 0 10px;font-size:1.2rem;font-weight:800}
+.mcard p{font-size:.88rem;color:var(--muted)}
+.mcard dl{display:grid;grid-template-columns:auto 1fr;gap:5px 14px;margin:14px 0 0;font-size:.82rem}
+.mcard dt{color:var(--faint)}
+.mcard dd{margin:0;font-weight:650;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.dots{display:flex;gap:7px;justify-content:center;margin-top:2px}
+.dots button{width:8px;height:8px;border-radius:50%;border:0;background:var(--border2);cursor:pointer;padding:0;transition:transform .25s,background .25s}
+.dots button[aria-current="true"]{background:var(--accent2);transform:scale(1.35)}
+.car-controls{position:absolute;top:-14px;right:0;display:flex;gap:8px}
+@media (max-width:720px){.car-controls{position:static;margin-bottom:8px;justify-content:flex-end}}
+
+/* ---------- timeline / team ---------- */
+.timeline{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;counter-reset:tl}
+@media (max-width:820px){.timeline{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:520px){.timeline{grid-template-columns:1fr}}
+.tl{padding:18px;position:relative}
+.tl::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px;background:var(--grad)}
+.tl .d{font-size:.72rem;font-weight:800;letter-spacing:.1em;color:var(--accent2);text-transform:uppercase}
+.tl h4{margin:4px 0 2px;font-size:.95rem}
+.tl p{margin:0;font-size:.78rem;color:var(--faint)}
+.member{padding:22px;text-align:center}
+.avatar{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;font-weight:900;font-size:1.15rem;color:#04070f;margin:0 auto 12px}
+.member h4{margin:0 0 3px;font-size:1rem}
+.member .usn{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.78rem;color:var(--muted)}
+.member .chip{margin-top:10px}
+.meta-line{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+
+/* ---------- donut / dataset ---------- */
+.data-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+@media (max-width:920px){.data-grid{grid-template-columns:1fr}}
+.donut-wrap{display:flex;align-items:center;gap:20px}
+.donut-wrap svg{width:130px;height:130px;flex:none}
+.donut-legend{font-size:.84rem;color:var(--muted)}
+.donut-legend b{color:var(--text);font-size:1.05rem}
+.donut-center{font-size:1.3rem;font-weight:900;fill:var(--text)}
+.donut-sub{font-size:.5rem;fill:var(--faint);font-weight:600;letter-spacing:.08em}
+.pairbars{display:flex;flex-direction:column;gap:14px;margin-top:6px}
+.pair{display:grid;grid-template-columns:120px 1fr;gap:10px;align-items:center}
+@media (max-width:520px){.pair{grid-template-columns:90px 1fr}}
+.pair .lb{font-size:.78rem;color:var(--muted);font-weight:650}
+.pair .track{display:flex;flex-direction:column;gap:4px}
+.pair .bar i.bg1{background:var(--grad)}
+.pair .bar i.bg2{background:linear-gradient(90deg,#f472b6,var(--violet))}
+.pair .pv{font-size:.66rem;color:var(--faint)}
+
+/* ---------- footer ---------- */
+footer{border-top:1px solid var(--border);padding:44px 24px 60px;color:var(--muted);font-size:.86rem}
+.foot-grid{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:2fr 1fr 1fr;gap:30px}
+@media (max-width:820px){.foot-grid{grid-template-columns:1fr}}
+footer h4{color:var(--text);font-size:.95rem;margin:0 0 10px}
+footer ul{list-style:none;padding:0;margin:0}
+footer li{margin-bottom:7px}
+footer a{color:var(--muted);text-decoration:none;border-bottom:1px dotted var(--border2)}
+footer a:hover{color:var(--accent2)}
+.foot-note{max-width:1200px;margin:34px auto 0;padding-top:18px;border-top:1px solid var(--border);font-size:.76rem;color:var(--faint);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-target" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 1v3M12 20v3M1 12h3M20 12h3"/></symbol>
+<symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></symbol>
+<symbol id="i-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></symbol>
+<symbol id="i-tree" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M12 7.5v4M12 11.5 6.8 16M12 11.5l5.2 4.5"/></symbol>
+<symbol id="i-forest" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3 4 10h2.5L3.5 15h4L5 21h6l-2.5-6h4L9.5 10H12z"/><path d="m17 6-3 5.5h2L13.5 16H16l-1.5 5h5l-1.5-5h2.5L18 11.5h2z"/></symbol>
+<symbol id="i-gauge" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 14a8 8 0 1 1 16 0"/><path d="m12 14 4-4"/><path d="M2 20h20"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+<symbol id="i-dl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3M4.6 4.6l2.1 2.1M17.3 17.3l2.1 2.1M4.6 19.4l2.1-2.1M17.3 6.7l2.1-2.1"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></symbol>
+<symbol id="i-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+<symbol id="i-arrowl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></symbol>
+<symbol id="i-arrowr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></symbol>
+<symbol id="i-db" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><ellipse cx="12" cy="5.5" rx="8" ry="3"/><path d="M4 5.5V12c0 1.7 3.6 3 8 3s8-1.3 8-3V5.5"/><path d="M4 12v6.5c0 1.7 3.6 3 8 3s8-1.3 8-3V12"/></symbol>
+<symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4.5 5v6.1c0 5 3.4 9.6 7.5 10.9 4.1-1.3 7.5-5.9 7.5-10.9V5z"/><path d="m9 11.5 2 2 4-4.5"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.4 3.4-5.5 6.5-5.5s5.7 2.1 6.5 5.5"/><circle cx="17" cy="9" r="2.6"/><path d="M16.4 14.6c2.6.3 4.5 2 5.1 4.9"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5.5l3.5 2"/></symbol>
+<symbol id="i-code" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m8 8-5 4 5 4M16 8l5 4-5 4M13.5 4 10.5 20"/></symbol>
+<symbol id="i-filter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18l-7 8.5V19l-4 2v-7.5z"/></symbol>
+<symbol id="i-spark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5 14 9l6.5 2L14 13l-2 6.5L10 13l-6.5-2L10 9z"/><path d="M19 3v3M20.5 4.5h-3"/></symbol>
+<symbol id="i-cal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></symbol>
+<symbol id="i-hand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 12V6.5a1.5 1.5 0 0 1 3 0V11m0-5.5v-2a1.5 1.5 0 0 1 3 0V11m0-4.5a1.5 1.5 0 0 1 3 0V12m0-3a1.5 1.5 0 0 1 3 0v6a6 6 0 0 1-6 6h-1.5a6 6 0 0 1-4.9-2.6L4 14.5a1.6 1.6 0 0 1 2.6-1.9L8 14"/></symbol>
+<symbol id="i-scale" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M5 21h14"/><path d="m12 5-7 3 0 0a3.5 3.5 0 0 0 7 0M12 5l7 3 0 0a3.5 3.5 0 0 1-7 0"/></symbol>
+</defs></svg>
+
+<header class="nav" id="nav">
+  <div class="nav-inner">
+    <a class="brand" href="#hero" aria-label="EarlyWatch home">
+      <span class="mark"><svg width="18" height="18"><use href="#i-target"/></svg></span>
+      <span>EarlyWatch<small>Predicting Course Failure Early</small></span>
+    </a>
+    <nav class="nav-links" aria-label="Primary">
+      <a href="#problem">Why</a>
+      <a href="#results">Results</a>
+      <a href="#threshold">Threshold</a>
+      <a href="#drivers">Drivers</a>
+      <a href="#watchlist">Watchlist</a>
+      <a href="#simulator">Simulator</a>
+      <a href="#pipeline">Pipeline</a>
+      <a href="#team">Team</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="icon-btn" id="themeBtn" aria-label="Toggle light / dark theme"><svg id="themeIcon"><use href="#i-sun"/></svg></button>
+      <button class="icon-btn" id="menuBtn" aria-label="Open menu" aria-expanded="false"><svg><use href="#i-menu"/></svg></button>
+    </div>
+  </div>
+</header>
+<div class="mobile-menu" id="mobileMenu">
+  <a href="#problem">Why recall?</a><a href="#results">Live results</a><a href="#threshold">Threshold explorer</a>
+  <a href="#drivers">Risk drivers</a><a href="#watchlist">Watchlist</a><a href="#simulator">Risk simulator</a>
+  <a href="#pipeline">Pipeline</a><a href="#data">Dataset</a><a href="#team">Team &amp; reviews</a>
+</div>
+
+<main>
+<!-- ============ HERO ============ -->
+<section id="hero">
+  <canvas id="hero3d" aria-label="Rotating 3D scatter of all 649 students: first-term grade, absences and past failures, colored by final outcome. Drag to rotate, hover for details."></canvas>
+  <div class="hero-scrim"></div>
+  <div class="hero-tip" id="heroTip"></div>
+  <div class="legend" aria-hidden="true"><span><i style="background:#69e4ff"></i>passed</span><span><i style="background:#ff7d7d"></i>failed</span></div>
+  <div class="hero-hint"><svg width="14" height="14"><use href="#i-hand"/></svg> drag to rotate · hover a point — 649 real students</div>
+  <div class="hero-inner">
+    <div class="hero-badges">
+      <span class="chip info"><svg width="12" height="12"><use href="#i-spark"/></svg> SDG 4 · Quality Education</span>
+      <span class="chip">Project 20 · Team B-2 · DSCE AI&amp;ML</span>
+      <span class="chip">Decision Tree + Random Forest · recall-first</span>
+    </div>
+    <h1>Catch the failure <span class="grad-text">before it happens</span></h1>
+    <p class="hero-sub">A machine-learning early-warning system that flags students at risk of failing <b>at mid-term</b> — while support can still change the outcome. Every number on this page is computed live from the real UCI Student Performance dataset (649 students, 33 attributes).</p>
+    <div class="hero-cta">
+      <a class="btn primary" href="#results">Explore live results <svg><use href="#i-arrowr"/></svg></a>
+      <a class="btn ghost" href="#watchlist">Open the watchlist</a>
+    </div>
+    <div class="hero-kpis">
+      <div class="hkpi"><div class="n"><span data-count="kpi-recall">0</span>%</div><div class="l">Recall on failing class · tuned</div></div>
+      <div class="hkpi"><div class="n"><span data-count="kpi-fn">0</span> <small style="font-size:.5em;color:var(--muted)">of 25</small></div><div class="l">Real failures missed (FN)</div></div>
+      <div class="hkpi"><div class="n"><span data-count="kpi-n">0</span></div><div class="l">Students analysed · 33 attributes</div></div>
+      <div class="hkpi"><div class="n"><span data-count="kpi-wl">0</span></div><div class="l">Flagged for follow-up · 32% of class</div></div>
+    </div>
+    <div class="hero-ticker"><span class="dot"></span><span>live</span><b id="tickerText">—</b></div>
+  </div>
+</section>
+
+<!-- ============ WHY / PROBLEM ============ -->
+<section id="problem">
+  <div class="wrap">
+    <div class="head-row" data-reveal>
+      <div>
+        <span class="eyebrow">The asymmetry that shapes everything</span>
+        <h2 class="section-title">A missed failure costs a year.<br>A false alarm costs <span class="grad-text">a conversation.</span></h2>
+        <p class="lede">Teachers with large classes cannot track every student. Low early grades, past failures and absences usually surface only after the final exam — when it is too late to help. So this pipeline is built <b>recall-first</b>: find (almost) every student who will fail, and accept extra flags as the price.</p>
+      </div>
+    </div>
+    <div class="grid g3">
+      <div class="glass card" data-reveal>
+        <div class="ico red"><svg><use href="#i-alert"/></svg></div>
+        <h3>Missed failure (false negative)</h3>
+        <p>A student who needed help slips through and loses the year. The pipeline weights errors on the failing class <b>3× costlier</b> (<code>class_weight="balanced"</code>) and grid-search optimizes <b>recall</b>, never accuracy.</p>
+      </div>
+      <div class="glass card" data-reveal data-delay="1">
+        <div class="ico amber"><svg><use href="#i-chat"/></svg></div>
+        <h3>False alarm (false positive)</h3>
+        <p>A short check-in with a student who was fine. Flagging more students than will actually fail is <b>intentional</b> — the decision threshold is tuned to hit 90% recall with as few unnecessary flags as possible.</p>
+      </div>
+      <div class="glass card" data-reveal data-delay="2">
+        <div class="ico green"><svg><use href="#i-clock"/></svg></div>
+        <h3>Timing is the whole point</h3>
+        <p><code>G3</code> is the answer and is dropped; <code>G2</code> arrives too late and is dropped; <code>G1</code> is kept for the mid-term watchlist. Compare both runs below to see what predicting earlier costs.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ LIVE RESULTS ============ -->
+<section id="results">
+  <div class="wrap">
+    <div class="head-row" data-reveal>
+      <div>
+        <span class="eyebrow">Live results · computed from the real pipeline</span>
+        <h2 class="section-title">Held-out test set, <span class="grad-text">recall first</span></h2>
+        <p class="lede">Stratified 75/25 split, 5-fold CV, grid search on recall, threshold tuned on out-of-fold <b>training</b> predictions only. Toggle the timing to see everything on this page update.</p>
+      </div>
+      <div class="seg" role="group" aria-label="Choose prediction timing" id="runSeg">
+        <button data-run="g1" aria-pressed="true">Mid-term · with G1</button>
+        <button data-run="nog1" aria-pressed="false">Pre-term · no grades</button>
+      </div>
+    </div>
+    <div class="kpis" data-reveal>
+      <div class="kpi glass"><div class="num" id="k-recall">—</div><div class="lab">Recall (fail) · Random Forest, tuned</div><div class="sub" id="k-recall-sub">—</div></div>
+      <div class="kpi glass"><div class="num bad" id="k-fn">—</div><div class="lab">Missed failures (FN)</div><div class="sub" id="k-fn-sub">—</div></div>
+      <div class="kpi glass"><div class="num" id="k-prec">—</div><div class="lab">Precision (fail)</div><div class="sub" id="k-prec-sub">—</div></div>
+      <div class="kpi glass"><div class="num" id="k-wl">—</div><div class="lab">Watchlist size</div><div class="sub" id="k-wl-sub">—</div></div>
+    </div>
+    <div class="cm-grid" data-reveal>
+      <div class="glass cm" id="cm-rf">
+        <h4>Random Forest — recall-tuned</h4>
+        <div class="cm-sub" id="cm-rf-sub">—</div>
+        <div class="cm-rows">
+          <div class="cm-corner"></div><div class="cm-side">Predicted<br>fail</div><div class="cm-side">Predicted<br>pass</div>
+          <div class="cm-side">Actually<br>failed</div>
+          <div class="cm-cell tp"><span class="v" id="rf-tp">–</span><span class="k">caught (TP)</span></div>
+          <div class="cm-cell fn"><span class="v" id="rf-fn">–</span><span class="k">missed (FN)</span></div>
+          <div class="cm-side">Actually<br>passed</div>
+          <div class="cm-cell fp"><span class="v" id="rf-fp">–</span><span class="k">false alarms</span></div>
+          <div class="cm-cell tn"><span class="v" id="rf-tn">–</span><span class="k">correct passes</span></div>
+        </div>
+      </div>
+      <div class="glass cm" id="cm-dt">
+        <h4>Decision Tree — recall-tuned</h4>
+        <div class="cm-sub" id="cm-dt-sub">—</div>
+        <div class="cm-rows">
+          <div class="cm-corner"></div><div class="cm-side">Predicted<br>fail</div><div class="cm-side">Predicted<br>pass</div>
+          <div class="cm-side">Actually<br>failed</div>
+          <div class="cm-cell tp"><span class="v" id="dt-tp">–</span><span class="k">caught (TP)</span></div>
+          <div class="cm-cell fn"><span class="v" id="dt-fn">–</span><span class="k">missed (FN)</span></div>
+          <div class="cm-side">Actually<br>passed</div>
+          <div class="cm-cell fp"><span class="v" id="dt-fp">–</span><span class="k">false alarms</span></div>
+          <div class="cm-cell tn"><span class="v" id="dt-tn">–</span><span class="k">correct passes</span></div>
+        </div>
+      </div>
+    </div>
+    <div data-reveal style="margin-top:16px">
+      <div class="table-wrap">
+        <table id="resultsTable">
+          <thead><tr><th>Model</th><th>Threshold</th><th class="hl">Recall (fail)</th><th>Missed (FN)</th><th>Caught (TP)</th><th>False alarms (FP)</th><th>Precision</th><th>F1</th><th>Accuracy</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p class="note"><b>How to read this:</b> look at recall first, then the missed-fails column, then watchlist size as a share of the class. Precision and accuracy are secondary by design. The no-grades Decision Tree hits its 90% target only by pushing the threshold to the floor (0.05) — that is what "no information" looks like.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ THRESHOLD EXPLORER ============ -->
+<section id="threshold">
+  <div class="wrap">
+    <div class="head-row" data-reveal>
+      <div>
+        <span class="eyebrow">Dynamic · try the tuning yourself</span>
+        <h2 class="section-title">The threshold is a <span class="grad-text">teaching policy</span></h2>
+        <p class="lede">Drag the decision threshold and watch recall, precision and watchlist load move in real time. Where would you draw the line? The dashed marker is where the pipeline actually landed — the highest threshold that still reaches the 90% recall target.</p>
+      </div>
+      <div class="seg" role="group" aria-label="Choose model for sweep" id="modelSeg">
+        <button data-model="Random Forest" aria-pressed="true">Random Forest</button>
+        <button data-model="Decision Tree" aria-pressed="false">Decision Tree</button>
+      </div>
+    </div>
+    <div class="glass explorer" data-reveal>
+      <div class="explorer-top">
+        <b style="font-size:.9rem">Decision threshold</b>
+        <span class="chip info" id="thrChip">0.41</span>
+        <span style="margin-left:auto;font-size:.78rem;color:var(--faint)">on out-of-fold training probabilities — the test set was never used for tuning</span>
+      </div>
+      <div class="slider-row">
+        <span style="font-size:.75rem;color:var(--faint)">0.05</span>
+        <input type="range" id="thrSlider" min="0.05" max="0.60" step="0.01" value="0.41" aria-label="Decision threshold">
+        <span style="font-size:.75rem;color:var(--faint)">0.60</span>
+      </div>
+      <div class="explorer-metrics">
+        <div class="xmet"><div class="v" id="x-recall">—</div><div class="l">Recall (fail)</div></div>
+        <div class="xmet"><div class="v" id="x-prec">—</div><div class="l">Precision (fail)</div></div>
+        <div class="xmet"><div class="v" id="x-flags">—</div><div class="l">Class flagged</div></div>
+        <div class="xmet"><div class="v" id="x-fn">—</div><div class="l">Missed train fails (of <span id="x-train-n">75</span>)*</div></div>
+      </div>
+      <div class="chart-box">
+        <svg id="sweepSvg" viewBox="0 0 760 300" role="img" aria-label="Recall, precision and flagged share as functions of the decision threshold"></svg>
+        <div class="chart-legend">
+          <span><i style="background:var(--accent)"></i>recall (fail)</span>
+          <span><i style="background:var(--violet)"></i>precision (fail)</span>
+          <span><i style="background:var(--accent2)"></i>share of class flagged</span>
+          <span><i style="background:var(--warn);height:10px;width:3px"></i>pipeline's tuned threshold</span>
+        </div>
+      </div>
+      <p class="note">* Out-of-fold training split contains <b id="trainFails">—</b> real failing students; the metric labels update with the count. Tuning on training OOF predictions keeps the held-out test set honest.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FEATURE DRIVERS ============ -->
+<section id="drivers">
+  <div class="wrap">
+    <div class="head-row" data-reveal>
+      <div>
+        <span class="eyebrow">Explainability</span>
+        <h2 class="section-title">What actually <span class="grad-text">drives the risk</span></h2>
+        <p class="lede">Random Forest feature importances, top 12. The 1st-term grade dominates once it is available — without it, background and behaviour signals take over, which is exactly why the pre-term watchlist is so much noisier.</p>
+      </div>
+    </div>
+    <div class="grid drivers-grid" id="driversGrid">
+      <div class="glass card" data-reveal id="impCard">
+        <h3>Top 12 risk drivers <span class="chip info" id="impRunChip" style="margin-left:8px">—</span></h3>
+        <div id="impBars" style="margin-top:14px"></div>
+      </div>
+      <div class="glass card" data-reveal data-delay="1">
+        <h3>Top signals on the flagged list</h3>
+        <p style="margin-bottom:14px">How often each plain-language reason appears across the 52 flagged students of the mid-term watchlist.</p>
+        <div id="reasonChips" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+        <p class="note" style="margin-top:16px">A student can carry several flags. “Low 1st-term grade” alone covers <b id="rcG1">—</b> of the flagged students — the strongest single argument for checking in right after G1 is published.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ WATCHLIST ============ -->
+<section id="watchlist">
+  <div class="wrap">
+    <div class="head-row" data-reveal>
+      <div>
+        <span class="eyebrow">The deliverable · teacher-friendly output</span>
+        <h2 class="section-title">The <span class="grad-text">mid-term watchlist</span></h2>
+        <p class="lede">Every student the tuned model flags, sorted by risk, with plain-language reasons a teacher can act on. IDs are dataset row numbers — never names. Search, filter and sort it below, or download the CSV exactly as the pipeline saves it.</p>
+      </div>
+      <button class="btn ghost" id="csvBtn"><svg><use href="#i-dl"/></svg> Download CSV</button>
+    </div>
+    <div class="wl-tools" data-reveal>
+      <label class="search"><svg><use href="#i-search"/></svg><input id="wlSearch" type="search" placeholder="Search by ID, reason, G1, absences…" aria-label="Search watchlist"></label>
+      <div class="seg" role="group" aria-label="Filter by priority" id="wlSeg">
+        <button data-p="all" aria-pressed="true">All</button>
+        <button data-p="HIGH" aria-pressed="false">High</button>
+        <button data-p="MEDIUM" aria-pressed="false">Medium</button>
+      </div>
+      <div class="seg" role="group" aria-label="Choose timing for watchlist" id="wlRunSeg">
+        <button data-run="g1" aria-pressed="true">Mid-term</button>
+        <button data-run="nog1" aria-pressed="false">Pre-term</button>
+      </div>
+    </div>
+    <div class="wl-meta" data-reveal>
+      <span class="chip ok"><span class="dot"></span><b id="wlCount">—</b>&nbsp;students shown</span>
+      <span id="wlShare" class="chip">—</span>
+      <span id="wlCaught" class="chip info">—</span>
+      <span style="font-size:.78rem;color:var(--faint)">sorted by fail risk ↓ · click column headers to re-sort</span>
+    </div>
+    <div class="table-wrap" data-reveal>
+      <table id="wlTable">
+        <thead><tr>
+          <th class="sortable mono" data-s="id">ID</th>
+          <th>Priority</th>
+          <th class="sortable hl" data-s="risk">Fail risk %</th>
+          <th style="min-width:280px">Why flagged</th>
+          <th class="sortable" data-s="g1">G1</th>
+          <th class="sortable" data-s="absences">Absences</th>
+          <th class="sortable" data-s="failures">Past failures</th>
+          <th class="sortable" data-s="studytime">Study time</th>
+        </tr></thead>
+        <tbody id="wlBody"></tbody>
+      </table>
+      <div class="empty" id="wlEmpty" hidden>No students match — clear the search or the filter.</div>
+    </div>
+    <p class="note" data-reveal>In the pre-term view (no <code>G1</code>) the list grows to roughly half the class for similar recall — impractical for one teacher, and the clearest argument for waiting until mid-term grades exist.</p>
+  </div>
+</section>
+
+<!-- ============ SIMULATOR ============ -->
+<section id="simulator">
+  <div class="wrap">
+    <div class="head-row" data-reveal>
+      <div>
+        <span class="eyebrow">Interactive · runs entirely in your browser</span>
+        <h2 class="section-title">Dial up a student, <span class="grad-text">watch the risk move</span></h2>
+        <p class="lede">This demo distils the trained Random Forest into a small depth-4 decision tree (agrees with the forest’s probabilities to R²&nbsp;0.93), so the gauge responds instantly with no server. The amber chips apply the pipeline’s exact rule-based flags. <b>It is a teaching toy, not a verdict on any child.</b></p>
+      </div>
+    </div>
+    <div class="sim" data-reveal>
+      <div class="glass sim-form">
+        <div class="sim-group">
+          <h4>Grades &amp; effort</h4>
+          <div class="sim-row"><label for="s-g1">1st-term grade (G1 /20)</label><input type="range" id="s-g1" min="0" max="20" step="1" value="9"><output id="o-g1">9</output></div>
+          <div class="sim-row"><label for="s-failures">Past class failures</label><input type="range" id="s-failures" min="0" max="3" step="1" value="1"><output id="o-failures">1</output></div>
+          <div class="sim-row"><label for="s-absences">Absences</label><input type="range" id="s-absences" min="0" max="45" step="1" value="8"><output id="o-absences">8</output></div>
+          <div class="sim-row"><label for="s-studytime">Weekly study time</label><select id="s-studytime"><option value="1">1 · &lt;2 hrs</option><option value="2" selected>2 · 2–5 hrs</option><option value="3">3 · 5–10 hrs</option><option value="4">4 · &gt;10 hrs</option></select></div>
+          <div class="sim-row"><label for="s-higher">Wants higher education</label><select id="s-higher"><option value="yes" selected>yes</option><option value="no">no</option></select></div>
+        </div>
+        <div class="sim-group">
+          <h4>Background</h4>
+          <div class="sim-row"><label for="s-medu">Mother’s education (0–4)</label><input type="range" id="s-medu" min="0" max="4" step="1" value="2"><output id="o-medu">2</output></div>
+          <div class="sim-row"><label for="s-fedu">Father’s education (0–4)</label><input type="range" id="s-fedu" min="0" max="4" step="1" value="2"><output id="o-fedu">2</output></div>
+          <div class="sim-row"><label for="s-school">School</label><select id="s-school"><option value="GP" selected>GP · Gabriel Pereira</option><option value="MS">MS · Mousinho da Silveira</option></select></div>
+        </div>
+        <div class="sim-group">
+          <h4>Social life</h4>
+          <div class="sim-row"><label for="s-goout">Going out with friends</label><input type="range" id="s-goout" min="1" max="5" step="1" value="3"><output id="o-goout">3</output></div>
+          <div class="sim-row"><label for="s-dalc">Workday alcohol (1–5)</label><input type="range" id="s-dalc" min="1" max="5" step="1" value="2"><output id="o-dalc">2</output></div>
+          <div class="sim-row"><label for="s-walc">Weekend alcohol (1–5)</label><input type="range" id="s-walc" min="1" max="5" step="1" value="2"><output id="o-walc">2</output></div>
+        </div>
+      </div>
+      <div class="glass sim-out">
+        <svg id="gauge" viewBox="0 0 200 120" aria-hidden="true">
+          <path d="M16 110 A 84 84 0 0 1 184 110" fill="none" stroke="color-mix(in srgb,var(--border) 90%,transparent)" stroke-width="14" stroke-linecap="round"/>
+          <path id="gaugeArc" d="M16 110 A 84 84 0 0 1 184 110" fill="none" stroke="url(#gaugeGrad)" stroke-width="14" stroke-linecap="round" stroke-dasharray="264" stroke-dashoffset="264" style="transition:stroke-dashoffset .7s cubic-bezier(.2,.7,.3,1)"/>
+          <defs><linearGradient id="gaugeGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#34d399"/><stop offset=".55" stop-color="#fbbf24"/><stop offset="1" stop-color="#f87171"/></linearGradient></defs>
+        </svg>
+        <div class="gauge-num"><span id="simRisk">–</span><small style="font-size:.45em;color:var(--muted)">%</small></div>
+        <div class="gauge-cap">fail risk · distilled model</div>
+        <div class="sim-tier"><span class="chip med" id="simTier">—</span></div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:16px" id="simFlags"></div>
+        <div class="path" id="simPath">—</div>
+        <p class="note" style="margin-top:14px">Tier rule mirrors the pipeline: ≥60% HIGH — meet this week · ≥ tuned threshold MEDIUM — check in · else LOW.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PIPELINE (scroll-snap gallery) ============ -->
+<section id="pipeline">
+  <div class="wrap">
+    <div class="head-row" data-reveal>
+      <div>
+        <span class="eyebrow">Under the hood</span>
+        <h2 class="section-title">Eight steps, <span class="grad-text">leak-free</span></h2>
+        <p class="lede">Swipe or use the arrows — the gallery snaps one step at a time, exactly how the notebook runs.</p>
+      </div>
+      <div class="snap-nav">
+        <button class="icon-btn" id="pipePrev" aria-label="Previous step"><svg><use href="#i-arrowl"/></svg></button>
+        <button class="icon-btn" id="pipeNext" aria-label="Next step"><svg><use href="#i-arrowr"/></svg></button>
+      </div>
+    </div>
+    <div class="snap" id="pipeTrack" data-reveal>
+      <div class="glass step"><span class="n">01</span><div class="ico cyan"><svg><use href="#i-db"/></svg></div><h3>Fetch</h3><p>UCI zip → <code>student-por.csv</code> (649 × 33), handles the nested-zip mirror quirk. No manual downloads.</p></div>
+      <div class="glass step"><span class="n">02</span><div class="ico blue"><svg><use href="#i-target"/></svg></div><h3>Target</h3><p><code>fail = 1</code> if final grade G3 &lt; 10 (Portuguese 0–20 scale). Sanity-check class balance and missing values.</p></div>
+      <div class="glass step"><span class="n">03</span><div class="ico violet"><svg><use href="#i-filter"/></svg></div><h3>Preprocess</h3><p>One-hot encode categoricals, pass numerics through. Stratified 75/25 split keeps the failing class in both sets.</p></div>
+      <div class="glass step"><span class="n">04</span><div class="ico green"><svg><use href="#i-forest"/></svg></div><h3>Tune for recall</h3><p>5-fold stratified CV, <code>scoring="recall"</code> — not accuracy. Balanced class weights make misses costlier.</p></div>
+      <div class="glass step"><span class="n">05</span><div class="ico amber"><svg><use href="#i-gauge"/></svg></div><h3>Threshold</h3><p>Highest threshold on out-of-fold <b>training</b> probabilities that still reaches 90% recall. The test set is never peeked at.</p></div>
+      <div class="glass step"><span class="n">06</span><div class="ico red"><svg><use href="#i-scale"/></svg></div><h3>Evaluate</h3><p>Held-out test at 0.50 and the tuned threshold: recall, FN, TP, FP, precision, F1, accuracy + confusion matrices.</p></div>
+      <div class="glass step"><span class="n">07</span><div class="ico cyan"><svg><use href="#i-spark"/></svg></div><h3>Explain</h3><p>Random Forest feature importances → top 12 risk drivers in plain language for teachers and the report.</p></div>
+      <div class="glass step"><span class="n">08</span><div class="ico green"><svg><use href="#i-users"/></svg></div><h3>Watchlist</h3><p>Risk %, priority tier, reasons. Sorted by risk; only students at or above the tuned threshold appear. Saved as CSV.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ MODELS CAROUSEL ============ -->
+<section id="models">
+  <div class="wrap">
+    <div class="head-row" data-reveal>
+      <div>
+        <span class="eyebrow">Model cards · auto-advancing</span>
+        <h2 class="section-title">Two models, <span class="grad-text">one honest scoreboard</span></h2>
+        <p class="lede">The Decision Tree wins raw recall; the Random Forest is the steadier ranker, so it produces the watchlist. Pause the carousel by hovering.</p>
+      </div>
+      <div class="car-controls">
+        <button class="icon-btn" id="carPrev" aria-label="Previous card"><svg><use href="#i-arrowl"/></svg></button>
+        <button class="icon-btn" id="carNext" aria-label="Next card"><svg><use href="#i-arrowr"/></svg></button>
+      </div>
+    </div>
+    <div class="carousel" data-reveal>
+      <div class="car-track" id="carTrack">
+        <div class="glass mcard"><span class="tag">Model 01 · interpretable</span><h3>Decision Tree</h3><p>A transparent rule diagram a teacher could sketch on paper. Depth is capped by grid search; leaves need ≥20 students to keep rules general.</p><dl><dt>Best CV recall</dt><dd id="dt-cv">—</dd><dt>Max depth</dt><dd id="dt-depth">—</dd><dt>Min leaf</dt><dd id="dt-leaf">—</dd><dt>Test recall (tuned)</dt><dd id="dt-test">—</dd></dl></div>
+        <div class="glass mcard violet"><span class="tag">Model 02 · chosen ranker</span><h3>Random Forest</h3><p>400 balanced-subsample trees vote. Less variance than a single tree, and its probability ranking is what orders the watchlist.</p><dl><dt>Best CV recall</dt><dd id="rf-cv">—</dd><dt>Trees</dt><dd id="rf-est">—</dd><dt>Max depth</dt><dd id="rf-depth">—</dd><dt>Test recall (tuned)</dt><dd id="rf-test">—</dd></dl></div>
+        <div class="glass mcard amber"><span class="tag">Calibration</span><h3>Threshold tuning</h3><p>Out-of-fold probabilities on training data; walk thresholds down until the target recall is met, then take the highest passing point — fewest false alarms for the recall you demanded.</p><dl><dt>Target recall</dt><dd>0.90</dd><dt>RF threshold</dt><dd id="rf-thr">—</dd><dt>DT threshold</dt><dd id="dt-thr">—</dd><dt>Tuned on</dt><dd>train OOF only</dd></dl></div>
+        <div class="glass mcard cyan"><span class="tag">Leakage control</span><h3>How “early” stays early</h3><p><b>G3 dropped</b> — it is the answer. <b>G2 dropped</b> — arrives too late. <b>G1 kept</b> for mid-term (or dropped for a pre-term list). Run both and compare recall.</p><dl><dt>Mid-term recall</dt><dd id="lk-g1">—</dd><dt>Pre-term recall</dt><dd id="lk-nog1">—</dd><dt>Pre-term flags</dt><dd id="lk-nog1-wl">—</dd><dt>Cost of earlier</dt><dd id="lk-cost">—</dd></dl></div>
+      </div>
+      <div class="dots" id="carDots"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ DATASET ============ -->
+<section id="data">
+  <div class="wrap">
+    <div class="head-row" data-reveal>
+      <div>
+        <span class="eyebrow">The data behind the model</span>
+        <h2 class="section-title">649 students, <span class="grad-text">one shared classroom story</span></h2>
+        <p class="lede">Two Portuguese secondary schools, 33 attributes: family background, study time, past failures, support received, social life. Failing means a final grade below 10 — a small, imbalanced class, which is why stratification and balanced weights matter.</p>
+      </div>
+    </div>
+    <div class="data-grid">
+      <div class="glass card" data-reveal>
+        <h3>Class balance</h3>
+        <div class="donut-wrap" style="margin-top:16px">
+          <svg viewBox="0 0 140 140" role="img" aria-label="Donut chart of pass vs fail share">
+            <circle cx="70" cy="70" r="54" fill="none" stroke="color-mix(in srgb,var(--border) 80%,transparent)" stroke-width="16"/>
+            <circle id="donutFail" cx="70" cy="70" r="54" fill="none" stroke="url(#donutGrad)" stroke-width="16" stroke-dasharray="339.3" stroke-dashoffset="339.3" stroke-linecap="round" transform="rotate(-90 70 70)" style="transition:stroke-dashoffset 1.2s var(--ease)"/>
+            <defs><linearGradient id="donutGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f87171"/><stop offset="1" stop-color="#fbbf24"/></linearGradient></defs>
+            <text x="70" y="66" text-anchor="middle" class="donut-center" id="donutPct">—</text>
+            <text x="70" y="82" text-anchor="middle" class="donut-sub">WILL FAIL</text>
+          </svg>
+          <div class="donut-legend"><b id="balFail">—</b> of <b id="balN">—</b> students failed Portuguese<br><span id="balPass" style="font-size:.78rem">—</span><br><span style="font-size:.72rem;color:var(--faint)">0 missing values · target is imbalanced</span></div>
+        </div>
+        <div class="meta-line"><span class="chip">UCI id 320</span><span class="chip">487 train / 163 test</span><span class="chip">seed 42</span></div>
+      </div>
+      <div class="glass card" data-reveal data-delay="1">
+        <h3>Where the risk concentrates</h3>
+        <p style="margin-bottom:10px">Predicted fail-risk on the held-out test set, stacked by the real outcome.</p>
+        <div class="hist" id="histBars"></div>
+        <div class="hist-x" id="histX"></div>
+        <div class="hist-readout" id="histRead">Hover a bar for detail.</div>
+      </div>
+      <div class="glass card" data-reveal data-delay="2">
+        <h3>What predicting earlier costs</h3>
+        <p style="margin-bottom:6px">Mid-term (with G1) vs pre-term (background only) — Random Forest, tuned.</p>
+        <div class="pairbars">
+          <div class="pair"><span class="lb">Recall</span><div class="track"><div class="bar"><i class="bg1" data-w="92"></i></div><div class="bar"><i class="bg2" data-w="88"></i></div><span class="pv" id="pb-recall">—</span></div></div>
+          <div class="pair"><span class="lb">Precision</span><div class="track"><div class="bar"><i class="bg1" data-w="44"></i></div><div class="bar"><i class="bg2" data-w="26"></i></div><span class="pv" id="pb-prec">—</span></div></div>
+          <div class="pair"><span class="lb">Class flagged</span><div class="track"><div class="bar"><i class="bg1" data-w="32"></i></div><div class="bar"><i class="bg2" data-w="52"></i></div><span class="pv" id="pb-flag">—</span></div></div>
+          <div class="pair"><span class="lb">Missed fails</span><div class="track"><div class="bar"><i class="bg1" data-w="8"></i></div><div class="bar"><i class="bg2" data-w="12"></i></div><span class="pv" id="pb-fn">—</span></div></div>
+        </div>
+        <p class="note">Bar pairs: <b style="color:var(--accent2)">mid-term</b> vs <b style="color:var(--violet)">pre-term</b>, scaled to each metric’s max.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ETHICS ============ -->
+<section id="ethics">
+  <div class="wrap">
+    <div class="head-row" data-reveal>
+      <div>
+        <span class="eyebrow">Non-negotiables</span>
+        <h2 class="section-title">A tool for teachers, <span class="grad-text">never a label for students</span></h2>
+        <p class="lede">The watchlist supports human judgement — it must not rank, expose or penalise anyone.</p>
+      </div>
+    </div>
+    <div class="grid g4">
+      <div class="glass card" data-reveal><div class="ico green"><svg><use href="#i-shield"/></svg></div><h3>Support, not punishment</h3><p>Flags trigger a conversation and support — never public ranking, labelling or discipline.</p></div>
+      <div class="glass card" data-reveal data-delay="1"><div class="ico blue"><svg><use href="#i-db"/></svg></div><h3>Validate locally first</h3><p>Data comes from two Portuguese schools. Before real use, retrain and re-check on your own students’ records.</p></div>
+      <div class="glass card" data-reveal data-delay="2"><div class="ico violet"><svg><use href="#i-alert"/></svg></div><h3>Sensitive features</h3><p>Parental education and alcohol use direct support only. They must never be used to stigmatise a child or a family.</p></div>
+      <div class="glass card" data-reveal data-delay="3"><div class="ico amber"><svg><use href="#i-scale"/></svg></div><h3>Over-flagging is intentional</h3><p>More flags than failures is the design: a false alarm costs a conversation, a missed failure costs a year.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TEAM ============ -->
+<section id="team">
+  <div class="wrap">
+    <div class="head-row" data-reveal>
+      <div>
+        <span class="eyebrow">Community project (mini project) · BCP308 · III Semester B.E. (AI&amp;ML) · AY 2026–27</span>
+        <h2 class="section-title">Team <span class="grad-text">B-2</span> &amp; review runway</h2>
+        <p class="lede">Department of Artificial Intelligence &amp; Machine Learning, Dayananda Sagar College of Engineering. Guide: DB · Co-Guide (Evaluator): PMR · Venue: Room 103 · Section B.</p>
+      </div>
+    </div>
+    <div class="snap" data-reveal id="teamTrack">
+      <div class="glass member"><div class="avatar" style="background:linear-gradient(135deg,#6d7cff,#22d3ee)">SK</div><h4>Shrisha G K</h4><div class="usn">1DS25AI101</div><span class="chip info">Team Lead (SPOC)</span></div>
+      <div class="glass member"><div class="avatar" style="background:linear-gradient(135deg,#22d3ee,#34d399)">PP</div><h4>Partha K P</h4><div class="usn">1DS25AI069</div><span class="chip">Member</span></div>
+      <div class="glass member"><div class="avatar" style="background:linear-gradient(135deg,#a78bfa,#f472b6)">TH</div><h4>Tejaswi P Hegde</h4><div class="usn">1DS25AI114</div><span class="chip">Member</span></div>
+      <div class="glass member"><div class="avatar" style="background:linear-gradient(135deg,#fbbf24,#f87171)">RV</div><h4>R Varun Simhan</h4><div class="usn">1DS25AI081</div><span class="chip">Member</span></div>
+    </div>
+    <div class="timeline" data-reveal style="margin-top:26px">
+      <div class="glass tl"><span class="d">18 · 11 · 2026</span><h4>Synopsis submission</h4><p>3:30–3:40 pm · Room 103</p></div>
+      <div class="glass tl"><span class="d">23 · 11 · 2026</span><h4>Review 1</h4><p>3:30–3:40 pm · Room 103</p></div>
+      <div class="glass tl"><span class="d">26 · 11 · 2026</span><h4>Review 2</h4><p>3:30–3:40 pm · Room 103</p></div>
+      <div class="glass tl"><span class="d">30 · 11 · 2026</span><h4>Review 3</h4><p>3:30–3:40 pm · Room 103</p></div>
+    </div>
+    <div class="glass card" data-reveal style="margin-top:16px;display:flex;gap:16px;align-items:flex-start">
+      <div class="ico blue"><svg><use href="#i-cal"/></svg></div>
+      <p style="font-size:.9rem"><b style="color:var(--text)">Field interaction.</b> Intervention timing and watchlist size were informed by an interview with a government/aided school teacher: a prediction only has value if it arrives before the point where an intervention can still change the outcome — see the Field Interaction Record in the project report.</p>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="foot-grid">
+    <div>
+      <h4>EarlyWatch — Predicting Course Failure Early</h4>
+      <p style="margin:0 0 8px">SDG 4 · Quality Education. Recall-first Decision Tree &amp; Random Forest on the UCI Student Performance dataset, producing a mid-term watchlist teachers can act on.</p>
+      <p style="font-size:.76rem;color:var(--faint)">All metrics on this page were computed by running the project’s real pipeline (scikit-learn 1.5.2, seed 42) on the live UCI dataset on 21 Nov 2026. Nothing is hard-coded fiction.</p>
+    </div>
+    <div>
+      <h4>Source</h4>
+      <ul>
+        <li><a href="https://archive.ics.uci.edu/dataset/320/student+performance" target="_blank" rel="noopener">UCI Student Performance (id 320)</a></li>
+        <li>Cortez &amp; Silva, 2008 — <i>Using Data Mining to Predict Secondary School Student Performance</i></li>
+        <li><a href="https://www.sdgs.un.org/goals/goal4" target="_blank" rel="noopener">UN SDG 4 · Quality Education</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Stack</h4>
+      <ul>
+        <li>pandas · scikit-learn · numpy</li>
+        <li>Single-file frontend · zero dependencies</li>
+        <li>Canvas 3D · CSS scroll-snap · Web Animations</li>
+        <li>Code: MIT · Dataset: UCI terms</li>
+      </ul>
+    </div>
+  </div>
+  <div class="foot-note">
+    <span>© 2026 Team B-2 · DSCE, Dept. of AI &amp; ML · Built for demonstration and coursework</span>
+    <span>⚠ The watchlist supports teacher judgement — it must never be used to label or penalise students.</span>
+  </div>
+</footer>
+
+<script>
+"use strict";
+/* ============ injected pipeline data (real outputs) ============ */
+const DATA = {"meta":{"pass_mark":10,"target_recall":0.9,"random_state":42,"test_size":0.25,"n_features_raw":33,"dataset":"UCI Student Performance id=320 (student-por.csv)","n_train":486,"n_test":163,"surrogate":{"depth":4,"r2":0.931,"features":["age","Medu","Fedu","traveltime","studytime","failures","famrel","freetime","goout","Dalc","Walc","health","absences","G1","school_GP","sex_F","famsize_GT3","address_U","Pstatus_T","schoolsup_yes","famsup_yes","paid_yes","activities_yes","nursery_yes","higher_yes","internet_yes","romantic_yes"],"used":["G1","failures","school_GP"],"tree":{"leaf":false,"f":"G1","thresh":9.5,"left":{"leaf":false,"f":"G1","thresh":8.5,"left":{"leaf":false,"f":"failures","thresh":0.5,"left":{"leaf":true,"value":0.6566},"right":{"leaf":true,"value":0.7707}},"right":{"leaf":false,"f":"school_GP","thresh":0.5,"left":{"leaf":true,"value":0.655},"right":{"leaf":true,"value":0.5194}}},"right":{"leaf":false,"f":"failures","thresh":0.5,"left":{"leaf":false,"f":"school_GP","thresh":0.5,"left":{"leaf":false,"f":"G1","thresh":10.5,"left":{"leaf":true,"value":0.3723},"right":{"leaf":true,"value":0.2603}},"right":{"leaf":false,"f":"G1","thresh":10.5,"left":{"leaf":true,"value":0.2523},"right":{"leaf":true,"value":0.1639}}},"right":{"leaf":true,"value":0.4442}}}}},"balance":{"n":649,"fail":100,"pass":549,"fail_pct":15.4,"missing":0},"runs":{"g1":{"label":"Mid-term watchlist (G1 available)","use_g1":true,"n_cat":17,"n_num":14,"thresholds":{"Decision Tree":0.53,"Random Forest":0.41},"cv_best":{"Decision Tree":{"recall":0.907,"params":{"max_depth":3,"min_samples_leaf":20}},"Random Forest":{"recall":0.813,"params":{"max_depth":4,"min_samples_leaf":3,"n_estimators":400}}},"results":[{"model":"Decision Tree","threshold_label":"default 0.50","threshold":0.5,"recall":0.96,"fn":1,"tp":24,"fp":33,"tn":105,"precision":0.421,"f1":0.585,"accuracy":0.791},{"model":"Decision Tree","threshold_label":"recall-tuned","threshold":0.53,"recall":0.96,"fn":1,"tp":24,"fp":33,"tn":105,"precision":0.421,"f1":0.585,"accuracy":0.791},{"model":"Random Forest","threshold_label":"default 0.50","threshold":0.5,"recall":0.84,"fn":4,"tp":21,"fp":22,"tn":116,"precision":0.488,"f1":0.618,"accuracy":0.84},{"model":"Random Forest","threshold_label":"recall-tuned","threshold":0.41,"recall":0.92,"fn":2,"tp":23,"fp":29,"tn":109,"precision":0.442,"f1":0.597,"accuracy":0.81}],"confusion_tuned":{"Decision Tree":{"tn":105,"fp":33,"fn":1,"tp":24},"Random Forest":{"tn":109,"fp":29,"fn":2,"tp":23}},"importances":[{"feature":"G1","importance":0.3723},{"feature":"failures","importance":0.1211},{"feature":"school_MS","importance":0.0762},{"feature":"higher_yes","importance":0.048},{"feature":"studytime","importance":0.0398},{"feature":"Fedu","importance":0.0337},{"feature":"famrel","importance":0.0256},{"feature":"absences","importance":0.0237},{"feature":"Medu","importance":0.0236},{"feature":"goout","importance":0.0217},{"feature":"Walc","importance":0.0211},{"feature":"freetime","importance":0.0174}],"sweep":{"Decision Tree":[{"t":0.05,"recall":0.947,"precision":0.36,"flag_share":0.405},{"t":0.06,"recall":0.947,"precision":0.36,"flag_share":0.405},{"t":0.07,"recall":0.947,"precision":0.36,"flag_share":0.405},{"t":0.08,"recall":0.947,"precision":0.36,"flag_share":0.405},{"t":0.09,"recall":0.947,"precision":0.36,"flag_share":0.405},{"t":0.1,"recall":0.947,"precision":0.36,"flag_share":0.405},{"t":0.11,"recall":0.947,"precision":0.36,"flag_share":0.405},{"t":0.12,"recall":0.947,"precision":0.36,"flag_share":0.405},{"t":0.13,"recall":0.947,"precision":0.36,"flag_share":0.405},{"t":0.14,"recall":0.947,"precision":0.372,"flag_share":0.393},{"t":0.15,"recall":0.947,"precision":0.372,"flag_share":0.393},{"t":0.16,"recall":0.933,"precision":0.435,"flag_share":0.331},{"t":0.17,"recall":0.933,"precision":0.435,"flag_share":0.331},{"t":0.18,"recall":0.933,"precision":0.44,"flag_share":0.327},{"t":0.19,"recall":0.933,"precision":0.44,"flag_share":0.327},{"t":0.2,"recall":0.933,"precision":0.44,"flag_share":0.327},{"t":0.21,"recall":0.933,"precision":0.44,"flag_share":0.327},{"t":0.22,"recall":0.933,"precision":0.44,"flag_share":0.327},{"t":0.23,"recall":0.933,"precision":0.44,"flag_share":0.327},{"t":0.24,"recall":0.933,"precision":0.44,"flag_share":0.327},{"t":0.25,"recall":0.933,"precision":0.44,"flag_share":0.327},{"t":0.26,"recall":0.92,"precision":0.457,"flag_share":0.311},{"t":0.27,"recall":0.92,"precision":0.457,"flag_share":0.311},{"t":0.28,"recall":0.92,"precision":0.457,"flag_share":0.311},{"t":0.29,"recall":0.92,"precision":0.457,"flag_share":0.311},{"t":0.3,"recall":0.92,"precision":0.457,"flag_share":0.311},{"t":0.31,"recall":0.92,"precision":0.457,"flag_share":0.311},{"t":0.32,"recall":0.92,"precision":0.457,"flag_share":0.311},{"t":0.33,"recall":0.92,"precision":0.457,"flag_share":0.311},{"t":0.34,"recall":0.92,"precision":0.457,"flag_share":0.311},{"t":0.35,"recall":0.92,"precision":0.457,"flag_share":0.311},{"t":0.36,"recall":0.92,"precision":0.457,"flag_share":0.311},{"t":0.37,"recall":0.92,"precision":0.457,"flag_share":0.311},{"t":0.38,"recall":0.92,"precision":0.457,"flag_share":0.311},{"t":0.39,"recall":0.92,"precision":0.457,"flag_share":0.311},{"t":0.4,"recall":0.92,"precision":0.457,"flag_share":0.311},{"t":0.41,"recall":0.92,"precision":0.457,"flag_share":0.311},{"t":0.42,"recall":0.92,"precision":0.457,"flag_share":0.311},{"t":0.43,"recall":0.92,"precision":0.457,"flag_share":0.311},{"t":0.44,"recall":0.92,"precision":0.457,"flag_share":0.311},{"t":0.45,"recall":0.92,"precision":0.457,"flag_share":0.311},{"t":0.46,"recall":0.92,"precision":0.457,"flag_share":0.311},{"t":0.47,"recall":0.907,"precision":0.479,"flag_share":0.292},{"t":0.48,"recall":0.907,"precision":0.479,"flag_share":0.292},{"t":0.49,"recall":0.907,"precision":0.479,"flag_share":0.292},{"t":0.5,"recall":0.907,"precision":0.479,"flag_share":0.292},{"t":0.51,"recall":0.907,"precision":0.479,"flag_share":0.292},{"t":0.52,"recall":0.907,"precision":0.479,"flag_share":0.292},{"t":0.53,"recall":0.907,"precision":0.479,"flag_share":0.292},{"t":0.54,"recall":0.893,"precision":0.519,"flag_share":0.265},{"t":0.55,"recall":0.893,"precision":0.519,"flag_share":0.265},{"t":0.56,"recall":0.893,"precision":0.558,"flag_share":0.247},{"t":0.57,"recall":0.88,"precision":0.574,"flag_share":0.237},{"t":0.58,"recall":0.88,"precision":0.574,"flag_share":0.237},{"t":0.59,"recall":0.88,"precision":0.574,"flag_share":0.237},{"t":0.6,"recall":0.88,"precision":0.606,"flag_share":0.224}],"Random Forest":[{"t":0.05,"recall":1.0,"precision":0.154,"flag_share":1.0},{"t":0.06,"recall":1.0,"precision":0.155,"flag_share":0.998},{"t":0.07,"recall":1.0,"precision":0.155,"flag_share":0.996},{"t":0.08,"recall":1.0,"precision":0.156,"flag_share":0.99},{"t":0.09,"recall":1.0,"precision":0.158,"flag_share":0.975},{"t":0.1,"recall":1.0,"precision":0.164,"flag_share":0.94},{"t":0.11,"recall":1.0,"precision":0.169,"flag_share":0.916},{"t":0.12,"recall":1.0,"precision":0.175,"flag_share":0.881},{"t":0.13,"recall":1.0,"precision":0.188,"flag_share":0.821},{"t":0.14,"recall":1.0,"precision":0.198,"flag_share":0.78},{"t":0.15,"recall":0.987,"precision":0.21,"flag_share":0.726},{"t":0.16,"recall":0.987,"precision":0.224,"flag_share":0.679},{"t":0.17,"recall":0.987,"precision":0.242,"flag_share":0.63},{"t":0.18,"recall":0.987,"precision":0.252,"flag_share":0.605},{"t":0.19,"recall":0.987,"precision":0.266,"flag_share":0.572},{"t":0.2,"recall":0.987,"precision":0.279,"flag_share":0.545},{"t":0.21,"recall":0.987,"precision":0.306,"flag_share":0.498},{"t":0.22,"recall":0.987,"precision":0.319,"flag_share":0.477},{"t":0.23,"recall":0.987,"precision":0.336,"flag_share":0.453},{"t":0.24,"recall":0.987,"precision":0.346,"flag_share":0.44},{"t":0.25,"recall":0.987,"precision":0.361,"flag_share":0.422},{"t":0.26,"recall":0.987,"precision":0.372,"flag_share":0.409},{"t":0.27,"recall":0.987,"precision":0.389,"flag_share":0.391},{"t":0.28,"recall":0.987,"precision":0.409,"flag_share":0.372},{"t":0.29,"recall":0.987,"precision":0.42,"flag_share":0.362},{"t":0.3,"recall":0.987,"precision":0.435,"flag_share":0.35},{"t":0.31,"recall":0.973,"precision":0.445,"flag_share":0.337},{"t":0.32,"recall":0.96,"precision":0.459,"flag_share":0.323},{"t":0.33,"recall":0.96,"precision":0.462,"flag_share":0.321},{"t":0.34,"recall":0.96,"precision":0.474,"flag_share":0.313},{"t":0.35,"recall":0.96,"precision":0.486,"flag_share":0.305},{"t":0.36,"recall":0.947,"precision":0.493,"flag_share":0.296},{"t":0.37,"recall":0.947,"precision":0.504,"flag_share":0.29},{"t":0.38,"recall":0.947,"precision":0.518,"flag_share":0.282},{"t":0.39,"recall":0.947,"precision":0.526,"flag_share":0.278},{"t":0.4,"recall":0.92,"precision":0.543,"flag_share":0.261},{"t":0.41,"recall":0.907,"precision":0.548,"flag_share":0.255},{"t":0.42,"recall":0.893,"precision":0.545,"flag_share":0.253},{"t":0.43,"recall":0.88,"precision":0.555,"flag_share":0.245},{"t":0.44,"recall":0.867,"precision":0.57,"flag_share":0.235},{"t":0.45,"recall":0.867,"precision":0.57,"flag_share":0.235},{"t":0.46,"recall":0.827,"precision":0.574,"flag_share":0.222},{"t":0.47,"recall":0.827,"precision":0.585,"flag_share":0.218},{"t":0.48,"recall":0.827,"precision":0.602,"flag_share":0.212},{"t":0.49,"recall":0.813,"precision":0.622,"flag_share":0.202},{"t":0.5,"recall":0.813,"precision":0.635,"flag_share":0.198},{"t":0.51,"recall":0.8,"precision":0.632,"flag_share":0.195},{"t":0.52,"recall":0.787,"precision":0.634,"flag_share":0.191},{"t":0.53,"recall":0.773,"precision":0.644,"flag_share":0.185},{"t":0.54,"recall":0.747,"precision":0.644,"flag_share":0.179},{"t":0.55,"recall":0.72,"precision":0.643,"flag_share":0.173},{"t":0.56,"recall":0.693,"precision":0.642,"flag_share":0.167},{"t":0.57,"recall":0.667,"precision":0.658,"flag_share":0.156},{"t":0.58,"recall":0.653,"precision":0.662,"flag_share":0.152},{"t":0.59,"recall":0.613,"precision":0.648,"flag_share":0.146},{"t":0.6,"recall":0.587,"precision":0.657,"flag_share":0.138}]},"watchlist":[{"Student ID":605,"Priority":"HIGH - meet this week","Fail risk %":81,"Why flagged":"Low 1st-term grade (5/20); 1 past class failure(s); Studies <2 hrs/week; Low parental education; No plan for higher education; High social time, low study time","G1":5,"absences":0,"failures":1,"studytime":1},{"Student ID":583,"Priority":"HIGH - meet this week","Fail risk %":81,"Why flagged":"Low 1st-term grade (8/20); 1 past class failure(s); Studies <2 hrs/week; No plan for higher education; High social time, low study time","G1":8,"absences":0,"failures":1,"studytime":1},{"Student ID":512,"Priority":"HIGH - meet this week","Fail risk %":80,"Why flagged":"Low 1st-term grade (7/20); 1 past class failure(s); 9 absences; Low parental education","G1":7,"absences":9,"failures":1,"studytime":2},{"Student ID":574,"Priority":"HIGH - meet this week","Fail risk %":80,"Why flagged":"Low 1st-term grade (8/20); 1 past class failure(s); 12 absences; Studies <2 hrs/week; Low parental education; No plan for higher education; High alcohol use","G1":8,"absences":12,"failures":1,"studytime":1},{"Student ID":557,"Priority":"HIGH - meet this week","Fail risk %":79,"Why flagged":"Low 1st-term grade (7/20); 3 past class failure(s); High social time, low study time","G1":7,"absences":2,"failures":3,"studytime":2},{"Student ID":639,"Priority":"HIGH - meet this week","Fail risk %":78,"Why flagged":"Low 1st-term grade (5/20); 1 past class failure(s); Studies <2 hrs/week; Low parental education","G1":5,"absences":0,"failures":1,"studytime":1},{"Student ID":571,"Priority":"HIGH - meet this week","Fail risk %":77,"Why flagged":"Low 1st-term grade (8/20); 3 past class failure(s); Studies <2 hrs/week; No plan for higher education","G1":8,"absences":4,"failures":3,"studytime":1},{"Student ID":587,"Priority":"HIGH - meet this week","Fail risk %":76,"Why flagged":"Low 1st-term grade (7/20); 1 past class failure(s)","G1":7,"absences":3,"failures":1,"studytime":2},{"Student ID":578,"Priority":"HIGH - meet this week","Fail risk %":74,"Why flagged":"Low 1st-term grade (8/20); 1 past class failure(s); High social time, low study time","G1":8,"absences":4,"failures":1,"studytime":2},{"Student ID":552,"Priority":"HIGH - meet this week","Fail risk %":74,"Why flagged":"Low 1st-term grade (9/20); 2 past class failure(s); Low parental education; No plan for higher education; High alcohol use","G1":9,"absences":2,"failures":2,"studytime":2},{"Student ID":488,"Priority":"HIGH - meet this week","Fail risk %":70,"Why flagged":"Low 1st-term grade (7/20); 1 past class failure(s); 6 absences; Low parental education; No plan for higher education","G1":7,"absences":6,"failures":1,"studytime":3},{"Student ID":481,"Priority":"HIGH - meet this week","Fail risk %":70,"Why flagged":"Low 1st-term grade (9/20); Studies <2 hrs/week; No plan for higher education","G1":9,"absences":2,"failures":0,"studytime":1},{"Student ID":629,"Priority":"HIGH - meet this week","Fail risk %":69,"Why flagged":"Low 1st-term grade (7/20); Studies <2 hrs/week; High social time, low study time","G1":7,"absences":4,"failures":0,"studytime":1},{"Student ID":440,"Priority":"HIGH - meet this week","Fail risk %":69,"Why flagged":"Low 1st-term grade (7/20); Low parental education; High alcohol use; High social time, low study time","G1":7,"absences":0,"failures":0,"studytime":2},{"Student ID":256,"Priority":"HIGH - meet this week","Fail risk %":68,"Why flagged":"Low 1st-term grade (7/20); 1 past class failure(s); 26 absences; Studies <2 hrs/week; No plan for higher education","G1":7,"absences":26,"failures":1,"studytime":1},{"Student ID":178,"Priority":"HIGH - meet this week","Fail risk %":66,"Why flagged":"Low 1st-term grade (8/20); Low parental education; No plan for higher education; High alcohol use; High social time, low study time","G1":8,"absences":0,"failures":0,"studytime":2},{"Student ID":173,"Priority":"HIGH - meet this week","Fail risk %":65,"Why flagged":"Low 1st-term grade (9/20); 2 past class failure(s); Studies <2 hrs/week; High alcohol use; High social time, low study time","G1":9,"absences":0,"failures":2,"studytime":1},{"Student ID":519,"Priority":"HIGH - meet this week","Fail risk %":65,"Why flagged":"Low 1st-term grade (8/20)","G1":8,"absences":0,"failures":0,"studytime":2},{"Student ID":421,"Priority":"HIGH - meet this week","Fail risk %":65,"Why flagged":"Low 1st-term grade (8/20); 1 past class failure(s); Studies <2 hrs/week; Low parental education","G1":8,"absences":5,"failures":1,"studytime":1},{"Student ID":622,"Priority":"HIGH - meet this week","Fail risk %":64,"Why flagged":"Low 1st-term grade (8/20); High alcohol use; High social time, low study time","G1":8,"absences":0,"failures":0,"studytime":2},{"Student ID":441,"Priority":"HIGH - meet this week","Fail risk %":63,"Why flagged":"Low 1st-term grade (8/20); Low parental education; High alcohol use","G1":8,"absences":4,"failures":0,"studytime":2},{"Student ID":523,"Priority":"HIGH - meet this week","Fail risk %":63,"Why flagged":"Low 1st-term grade (5/20); No plan for higher education; High alcohol use","G1":5,"absences":2,"failures":0,"studytime":4},{"Student ID":627,"Priority":"HIGH - meet this week","Fail risk %":63,"Why flagged":"Low 1st-term grade (9/20); Studies <2 hrs/week; No plan for higher education","G1":9,"absences":3,"failures":0,"studytime":1},{"Student ID":528,"Priority":"HIGH - meet this week","Fail risk %":63,"Why flagged":"Low 1st-term grade (9/20); Studies <2 hrs/week","G1":9,"absences":5,"failures":0,"studytime":1},{"Student ID":540,"Priority":"HIGH - meet this week","Fail risk %":63,"Why flagged":"Low 1st-term grade (9/20); Studies <2 hrs/week","G1":9,"absences":5,"failures":0,"studytime":1},{"Student ID":521,"Priority":"HIGH - meet this week","Fail risk %":61,"Why flagged":"Low 1st-term grade (8/20)","G1":8,"absences":0,"failures":0,"studytime":2},{"Student ID":589,"Priority":"HIGH - meet this week","Fail risk %":61,"Why flagged":"Low 1st-term grade (7/20); Studies <2 hrs/week","G1":7,"absences":0,"failures":0,"studytime":1},{"Student ID":184,"Priority":"HIGH - meet this week","Fail risk %":61,"Why flagged":"Low 1st-term grade (9/20); 1 past class failure(s); Studies <2 hrs/week; High alcohol use; High social time, low study time","G1":9,"absences":4,"failures":1,"studytime":1},{"Student ID":305,"Priority":"HIGH - meet this week","Fail risk %":61,"Why flagged":"Low 1st-term grade (8/20); 8 absences; Studies <2 hrs/week; No plan for higher education; High social time, low study time","G1":8,"absences":8,"failures":0,"studytime":1},{"Student ID":419,"Priority":"HIGH - meet this week","Fail risk %":61,"Why flagged":"Low 1st-term grade (7/20); 10 absences; Studies <2 hrs/week; High alcohol use; High social time, low study time","G1":7,"absences":10,"failures":0,"studytime":1},{"Student ID":515,"Priority":"MEDIUM - check in / monitor","Fail risk %":59,"Why flagged":"Low 1st-term grade (9/20); 8 absences; Low parental education; High alcohol use; High social time, low study time","G1":9,"absences":8,"failures":0,"studytime":2},{"Student ID":585,"Priority":"MEDIUM - check in / monitor","Fail risk %":59,"Why flagged":"Low 1st-term grade (8/20); No plan for higher education","G1":8,"absences":5,"failures":0,"studytime":3},{"Student ID":322,"Priority":"MEDIUM - check in / monitor","Fail risk %":59,"Why flagged":"Low 1st-term grade (9/20); 1 past class failure(s); No plan for higher education; High alcohol use","G1":9,"absences":0,"failures":1,"studytime":2},{"Student ID":522,"Priority":"MEDIUM - check in / monitor","Fail risk %":58,"Why flagged":"Low 1st-term grade (8/20); High social time, low study time","G1":8,"absences":4,"failures":0,"studytime":2},{"Student ID":444,"Priority":"MEDIUM - check in / monitor","Fail risk %":58,"Why flagged":"Low 1st-term grade (9/20); High social time, low study time","G1":9,"absences":4,"failures":0,"studytime":2},{"Student ID":180,"Priority":"MEDIUM - check in / monitor","Fail risk %":57,"Why flagged":"Low 1st-term grade (9/20); No plan for higher education; High alcohol use; High social time, low study time","G1":9,"absences":0,"failures":0,"studytime":2},{"Student ID":176,"Priority":"MEDIUM - check in / monitor","Fail risk %":57,"Why flagged":"Low 1st-term grade (8/20); Studies <2 hrs/week; High alcohol use; High social time, low study time","G1":8,"absences":2,"failures":0,"studytime":1},{"Student ID":493,"Priority":"MEDIUM - check in / monitor","Fail risk %":57,"Why flagged":"Low 1st-term grade (9/20); Studies <2 hrs/week; Low parental education; High alcohol use; High social time, low study time","G1":9,"absences":5,"failures":0,"studytime":1},{"Student ID":642,"Priority":"MEDIUM - check in / monitor","Fail risk %":57,"Why flagged":"Low 1st-term grade (6/20); High social time, low study time","G1":6,"absences":0,"failures":0,"studytime":2},{"Student ID":251,"Priority":"MEDIUM - check in / monitor","Fail risk %":55,"Why flagged":"Low 1st-term grade (9/20); Studies <2 hrs/week","G1":9,"absences":4,"failures":0,"studytime":1},{"Student ID":219,"Priority":"MEDIUM - check in / monitor","Fail risk %":53,"Why flagged":"Low 1st-term grade (8/20); 1 past class failure(s); 14 absences; High alcohol use","G1":8,"absences":14,"failures":1,"studytime":3},{"Student ID":626,"Priority":"MEDIUM - check in / monitor","Fail risk %":52,"Why flagged":"Low 1st-term grade (7/20); High alcohol use","G1":7,"absences":0,"failures":0,"studytime":2},{"Student ID":136,"Priority":"MEDIUM - check in / monitor","Fail risk %":52,"Why flagged":"Low 1st-term grade (9/20); Studies <2 hrs/week","G1":9,"absences":4,"failures":0,"studytime":1},{"Student ID":168,"Priority":"MEDIUM - check in / monitor","Fail risk %":50,"Why flagged":"Low 1st-term grade (7/20); High social time, low study time","G1":7,"absences":0,"failures":0,"studytime":2},{"Student ID":368,"Priority":"MEDIUM - check in / monitor","Fail risk %":49,"Why flagged":"Low 1st-term grade (8/20); Studies <2 hrs/week; High alcohol use; High social time, low study time","G1":8,"absences":2,"failures":0,"studytime":1},{"Student ID":1,"Priority":"MEDIUM - check in / monitor","Fail risk %":48,"Why flagged":"Low 1st-term grade (9/20); Low parental education","G1":9,"absences":2,"failures":0,"studytime":2},{"Student ID":278,"Priority":"MEDIUM - check in / monitor","Fail risk %":48,"Why flagged":"Low 1st-term grade (9/20); Studies <2 hrs/week","G1":9,"absences":2,"failures":0,"studytime":1},{"Student ID":554,"Priority":"MEDIUM - check in / monitor","Fail risk %":47,"Why flagged":"Studies <2 hrs/week; Low parental education; No plan for higher education; High social time, low study time","G1":10,"absences":3,"failures":0,"studytime":1},{"Student ID":90,"Priority":"MEDIUM - check in / monitor","Fail risk %":44,"Why flagged":"Low 1st-term grade (9/20)","G1":9,"absences":2,"failures":0,"studytime":3},{"Student ID":471,"Priority":"MEDIUM - check in / monitor","Fail risk %":43,"Why flagged":"1 past class failure(s); High social time, low study time","G1":12,"absences":2,"failures":1,"studytime":2},{"Student ID":559,"Priority":"MEDIUM - check in / monitor","Fail risk %":42,"Why flagged":"1 past class failure(s); Studies <2 hrs/week; Low parental education","G1":12,"absences":0,"failures":1,"studytime":1},{"Student ID":172,"Priority":"MEDIUM - check in / monitor","Fail risk %":42,"Why flagged":"1 past class failure(s); High alcohol use; High social time, low study time","G1":10,"absences":0,"failures":1,"studytime":2}],"watchlist_stats":{"flagged":52,"class":163,"flag_share_pct":32,"real_fails":25,"caught":23,"caught_pct":92},"test_risk":[{"id":234,"risk":21,"actual":0,"g1":11,"absences":0,"failures":0,"studytime":2},{"id":219,"risk":53,"actual":1,"g1":8,"absences":14,"failures":1,"studytime":3},{"id":361,"risk":16,"actual":0,"g1":11,"absences":9,"failures":0,"studytime":2},{"id":14,"risk":13,"actual":0,"g1":14,"absences":0,"failures":0,"studytime":3},{"id":512,"risk":80,"actual":1,"g1":7,"absences":9,"failures":1,"studytime":2},{"id":293,"risk":15,"actual":0,"g1":11,"absences":4,"failures":0,"studytime":3},{"id":140,"risk":32,"actual":0,"g1":10,"absences":2,"failures":0,"studytime":2},{"id":48,"risk":13,"actual":0,"g1":11,"absences":4,"failures":0,"studytime":2},{"id":178,"risk":66,"actual":1,"g1":8,"absences":0,"failures":0,"studytime":2},{"id":302,"risk":23,"actual":0,"g1":10,"absences":2,"failures":0,"studytime":3},{"id":296,"risk":19,"actual":0,"g1":16,"absences":2,"failures":0,"studytime":2},{"id":208,"risk":17,"actual":0,"g1":13,"absences":0,"failures":0,"studytime":1},{"id":136,"risk":52,"actual":0,"g1":9,"absences":4,"failures":0,"studytime":1},{"id":596,"risk":22,"actual":0,"g1":17,"absences":0,"failures":0,"studytime":2},{"id":309,"risk":28,"actual":0,"g1":10,"absences":4,"failures":0,"studytime":2},{"id":528,"risk":63,"actual":1,"g1":9,"absences":5,"failures":0,"studytime":1},{"id":440,"risk":69,"actual":1,"g1":7,"absences":0,"failures":0,"studytime":2},{"id":339,"risk":16,"actual":0,"g1":14,"absences":0,"failures":0,"studytime":3},{"id":103,"risk":18,"actual":0,"g1":11,"absences":16,"failures":0,"studytime":2},{"id":64,"risk":13,"actual":0,"g1":13,"absences":0,"failures":0,"studytime":2},{"id":126,"risk":21,"actual":0,"g1":10,"absences":0,"failures":0,"studytime":2},{"id":318,"risk":22,"actual":0,"g1":12,"absences":15,"failures":0,"studytime":2},{"id":585,"risk":59,"actual":1,"g1":8,"absences":5,"failures":0,"studytime":3},{"id":322,"risk":59,"actual":0,"g1":9,"absences":0,"failures":1,"studytime":2},{"id":233,"risk":12,"actual":0,"g1":12,"absences":0,"failures":0,"studytime":3},{"id":44,"risk":36,"actual":0,"g1":10,"absences":14,"failures":1,"studytime":2},{"id":1,"risk":48,"actual":0,"g1":9,"absences":2,"failures":0,"studytime":2},{"id":639,"risk":78,"actual":1,"g1":5,"absences":0,"failures":1,"studytime":1},{"id":305,"risk":61,"actual":1,"g1":8,"absences":8,"failures":0,"studytime":1},{"id":343,"risk":9,"actual":0,"g1":16,"absences":0,"failures":0,"studytime":4},{"id":218,"risk":18,"actual":0,"g1":13,"absences":6,"failures":0,"studytime":4},{"id":235,"risk":16,"actual":0,"g1":12,"absences":12,"failures":0,"studytime":3},{"id":260,"risk":36,"actual":0,"g1":12,"absences":4,"failures":0,"studytime":1},{"id":207,"risk":18,"actual":0,"g1":11,"absences":0,"failures":0,"studytime":1},{"id":421,"risk":65,"actual":0,"g1":8,"absences":5,"failures":1,"studytime":1},{"id":50,"risk":16,"actual":0,"g1":14,"absences":0,"failures":0,"studytime":2},{"id":646,"risk":30,"actual":1,"g1":11,"absences":6,"failures":0,"studytime":2},{"id":256,"risk":68,"actual":1,"g1":7,"absences":26,"failures":1,"studytime":1},{"id":441,"risk":63,"actual":1,"g1":8,"absences":4,"failures":0,"studytime":2},{"id":391,"risk":18,"actual":0,"g1":11,"absences":8,"failures":0,"studytime":3},{"id":231,"risk":20,"actual":0,"g1":10,"absences":10,"failures":0,"studytime":2},{"id":106,"risk":21,"actual":0,"g1":10,"absences":4,"failures":0,"studytime":4},{"id":333,"risk":13,"actual":0,"g1":13,"absences":0,"failures":0,"studytime":3},{"id":236,"risk":14,"actual":0,"g1":13,"absences":0,"failures":0,"studytime":2},{"id":267,"risk":20,"actual":0,"g1":15,"absences":8,"failures":0,"studytime":2},{"id":589,"risk":61,"actual":0,"g1":7,"absences":0,"failures":0,"studytime":1},{"id":559,"risk":42,"actual":0,"g1":12,"absences":0,"failures":1,"studytime":1},{"id":531,"risk":38,"actual":0,"g1":10,"absences":0,"failures":0,"studytime":2},{"id":419,"risk":61,"actual":0,"g1":7,"absences":10,"failures":0,"studytime":1},{"id":180,"risk":57,"actual":0,"g1":9,"absences":0,"failures":0,"studytime":2},{"id":488,"risk":70,"actual":1,"g1":7,"absences":6,"failures":1,"studytime":3},{"id":209,"risk":12,"actual":0,"g1":14,"absences":8,"failures":0,"studytime":2},{"id":522,"risk":58,"actual":1,"g1":8,"absences":4,"failures":0,"studytime":2},{"id":168,"risk":50,"actual":1,"g1":7,"absences":0,"failures":0,"studytime":2},{"id":523,"risk":63,"actual":1,"g1":5,"absences":2,"failures":0,"studytime":4},{"id":33,"risk":15,"actual":0,"g1":13,"absences":0,"failures":0,"studytime":2},{"id":224,"risk":9,"actual":0,"g1":12,"absences":4,"failures":0,"studytime":4},{"id":189,"risk":20,"actual":0,"g1":10,"absences":0,"failures":0,"studytime":2},{"id":411,"risk":10,"actual":0,"g1":12,"absences":2,"failures":0,"studytime":3},{"id":73,"risk":22,"actual":0,"g1":13,"absences":0,"failures":0,"studytime":1},{"id":462,"risk":25,"actual":0,"g1":13,"absences":0,"failures":0,"studytime":2},{"id":444,"risk":58,"actual":0,"g1":9,"absences":4,"failures":0,"studytime":2},{"id":172,"risk":42,"actual":1,"g1":10,"absences":0,"failures":1,"studytime":2},{"id":102,"risk":16,"actual":0,"g1":12,"absences":2,"failures":0,"studytime":1},{"id":371,"risk":34,"actual":0,"g1":10,"absences":2,"failures":0,"studytime":1},{"id":292,"risk":13,"actual":0,"g1":11,"absences":2,"failures":0,"studytime":3},{"id":338,"risk":15,"actual":0,"g1":18,"absences":0,"failures":0,"studytime":4},{"id":435,"risk":34,"actual":0,"g1":10,"absences":0,"failures":0,"studytime":2},{"id":368,"risk":49,"actual":0,"g1":8,"absences":2,"failures":0,"studytime":1},{"id":91,"risk":17,"actual":0,"g1":14,"absences":6,"failures":0,"studytime":1},{"id":251,"risk":55,"actual":0,"g1":9,"absences":4,"failures":0,"studytime":1},{"id":289,"risk":9,"actual":0,"g1":14,"absences":2,"failures":0,"studytime":4},{"id":519,"risk":65,"actual":1,"g1":8,"absences":0,"failures":0,"studytime":2},{"id":28,"risk":15,"actual":0,"g1":12,"absences":2,"failures":0,"studytime":2},{"id":83,"risk":18,"actual":0,"g1":13,"absences":2,"failures":0,"studytime":2},{"id":578,"risk":74,"actual":0,"g1":8,"absences":4,"failures":1,"studytime":2},{"id":398,"risk":12,"actual":0,"g1":11,"absences":0,"failures":0,"studytime":3},{"id":642,"risk":57,"actual":0,"g1":6,"absences":0,"failures":0,"studytime":2},{"id":623,"risk":18,"actual":0,"g1":15,"absences":0,"failures":0,"studytime":3},{"id":357,"risk":11,"actual":0,"g1":14,"absences":2,"failures":0,"studytime":3},{"id":220,"risk":18,"actual":0,"g1":11,"absences":2,"failures":0,"studytime":2},{"id":509,"risk":26,"actual":0,"g1":16,"absences":0,"failures":0,"studytime":2},{"id":278,"risk":48,"actual":0,"g1":9,"absences":2,"failures":0,"studytime":1},{"id":358,"risk":17,"actual":0,"g1":12,"absences":8,"failures":0,"studytime":1},{"id":299,"risk":32,"actual":0,"g1":10,"absences":8,"failures":0,"studytime":2},{"id":13,"risk":12,"actual":0,"g1":12,"absences":0,"failures":0,"studytime":2},{"id":629,"risk":69,"actual":1,"g1":7,"absences":4,"failures":0,"studytime":1},{"id":496,"risk":31,"actual":0,"g1":14,"absences":2,"failures":0,"studytime":1},{"id":583,"risk":81,"actual":1,"g1":8,"absences":0,"failures":1,"studytime":1},{"id":493,"risk":57,"actual":0,"g1":9,"absences":5,"failures":0,"studytime":1},{"id":410,"risk":13,"actual":0,"g1":13,"absences":0,"failures":0,"studytime":2},{"id":345,"risk":11,"actual":0,"g1":14,"absences":0,"failures":0,"studytime":2},{"id":471,"risk":43,"actual":0,"g1":12,"absences":2,"failures":1,"studytime":2},{"id":35,"risk":17,"actual":0,"g1":11,"absences":4,"failures":0,"studytime":1},{"id":22,"risk":15,"actual":0,"g1":12,"absences":0,"failures":0,"studytime":2},{"id":552,"risk":74,"actual":0,"g1":9,"absences":2,"failures":2,"studytime":2},{"id":507,"risk":22,"actual":0,"g1":11,"absences":0,"failures":0,"studytime":3},{"id":141,"risk":21,"actual":0,"g1":14,"absences":0,"failures":0,"studytime":2},{"id":144,"risk":22,"actual":0,"g1":12,"absences":8,"failures":0,"studytime":1},{"id":461,"risk":33,"actual":0,"g1":13,"absences":0,"failures":0,"studytime":1},{"id":515,"risk":59,"actual":0,"g1":9,"absences":8,"failures":0,"studytime":2},{"id":605,"risk":81,"actual":1,"g1":5,"absences":0,"failures":1,"studytime":1},{"id":226,"risk":13,"actual":0,"g1":13,"absences":0,"failures":0,"studytime":2},{"id":376,"risk":17,"actual":0,"g1":14,"absences":0,"failures":0,"studytime":3},{"id":94,"risk":12,"actual":0,"g1":11,"absences":2,"failures":0,"studytime":4},{"id":288,"risk":18,"actual":0,"g1":12,"absences":2,"failures":0,"studytime":2},{"id":606,"risk":17,"actual":0,"g1":18,"absences":0,"failures":0,"studytime":4},{"id":109,"risk":15,"actual":0,"g1":15,"absences":2,"failures":0,"studytime":3},{"id":404,"risk":19,"actual":0,"g1":12,"absences":4,"failures":0,"studytime":2},{"id":423,"risk":38,"actual":0,"g1":10,"absences":11,"failures":0,"studytime":1},{"id":636,"risk":16,"actual":0,"g1":17,"absences":4,"failures":0,"studytime":2},{"id":587,"risk":76,"actual":1,"g1":7,"absences":3,"failures":1,"studytime":2},{"id":541,"risk":26,"actual":0,"g1":11,"absences":0,"failures":0,"studytime":2},{"id":382,"risk":22,"actual":0,"g1":11,"absences":2,"failures":0,"studytime":1},{"id":449,"risk":28,"actual":0,"g1":11,"absences":3,"failures":0,"studytime":1},{"id":499,"risk":31,"actual":0,"g1":17,"absences":0,"failures":0,"studytime":1},{"id":417,"risk":11,"actual":0,"g1":14,"absences":5,"failures":0,"studytime":3},{"id":66,"risk":17,"actual":0,"g1":11,"absences":0,"failures":0,"studytime":4},{"id":54,"risk":23,"actual":0,"g1":13,"absences":0,"failures":0,"studytime":1},{"id":474,"risk":30,"actual":0,"g1":10,"absences":2,"failures":0,"studytime":1},{"id":63,"risk":12,"actual":0,"g1":14,"absences":0,"failures":0,"studytime":3},{"id":554,"risk":47,"actual":0,"g1":10,"absences":3,"failures":0,"studytime":1},{"id":41,"risk":27,"actual":0,"g1":10,"absences":8,"failures":0,"studytime":1},{"id":594,"risk":19,"actual":0,"g1":18,"absences":0,"failures":0,"studytime":2},{"id":571,"risk":77,"actual":1,"g1":8,"absences":4,"failures":3,"studytime":1},{"id":557,"risk":79,"actual":0,"g1":7,"absences":2,"failures":3,"studytime":2},{"id":173,"risk":65,"actual":0,"g1":9,"absences":0,"failures":2,"studytime":1},{"id":110,"risk":18,"actual":0,"g1":13,"absences":4,"failures":0,"studytime":1},{"id":330,"risk":17,"actual":0,"g1":12,"absences":10,"failures":0,"studytime":2},{"id":306,"risk":17,"actual":0,"g1":15,"absences":6,"failures":0,"studytime":2},{"id":626,"risk":52,"actual":1,"g1":7,"absences":0,"failures":0,"studytime":2},{"id":277,"risk":17,"actual":0,"g1":11,"absences":4,"failures":0,"studytime":2},{"id":516,"risk":19,"actual":0,"g1":14,"absences":0,"failures":0,"studytime":2},{"id":521,"risk":61,"actual":0,"g1":8,"absences":0,"failures":0,"studytime":2},{"id":176,"risk":57,"actual":0,"g1":8,"absences":2,"failures":0,"studytime":1},{"id":622,"risk":64,"actual":1,"g1":8,"absences":0,"failures":0,"studytime":2},{"id":645,"risk":25,"actual":0,"g1":15,"absences":4,"failures":0,"studytime":2},{"id":60,"risk":14,"actual":0,"g1":17,"absences":0,"failures":0,"studytime":2},{"id":619,"risk":24,"actual":0,"g1":13,"absences":6,"failures":0,"studytime":2},{"id":359,"risk":15,"actual":0,"g1":15,"absences":2,"failures":0,"studytime":3},{"id":574,"risk":80,"actual":0,"g1":8,"absences":12,"failures":1,"studytime":1},{"id":232,"risk":16,"actual":0,"g1":12,"absences":4,"failures":0,"studytime":1},{"id":460,"risk":22,"actual":0,"g1":11,"absences":1,"failures":0,"studytime":2},{"id":526,"risk":31,"actual":0,"g1":13,"absences":1,"failures":0,"studytime":1},{"id":205,"risk":18,"actual":0,"g1":12,"absences":0,"failures":0,"studytime":2},{"id":134,"risk":20,"actual":0,"g1":13,"absences":2,"failures":0,"studytime":1},{"id":325,"risk":28,"actual":0,"g1":11,"absences":22,"failures":0,"studytime":1},{"id":481,"risk":70,"actual":0,"g1":9,"absences":2,"failures":0,"studytime":1},{"id":375,"risk":14,"actual":0,"g1":14,"absences":0,"failures":0,"studytime":3},{"id":8,"risk":13,"actual":0,"g1":15,"absences":0,"failures":0,"studytime":2},{"id":377,"risk":12,"actual":0,"g1":13,"absences":0,"failures":0,"studytime":3},{"id":269,"risk":19,"actual":0,"g1":14,"absences":7,"failures":0,"studytime":1},{"id":90,"risk":44,"actual":0,"g1":9,"absences":2,"failures":0,"studytime":3},{"id":55,"risk":19,"actual":0,"g1":12,"absences":2,"failures":0,"studytime":2},{"id":167,"risk":16,"actual":0,"g1":13,"absences":0,"failures":0,"studytime":1},{"id":456,"risk":25,"actual":0,"g1":13,"absences":0,"failures":0,"studytime":2},{"id":21,"risk":16,"actual":0,"g1":11,"absences":0,"failures":0,"studytime":1},{"id":542,"risk":30,"actual":0,"g1":10,"absences":1,"failures":0,"studytime":3},{"id":184,"risk":61,"actual":0,"g1":9,"absences":4,"failures":1,"studytime":1},{"id":298,"risk":18,"actual":0,"g1":10,"absences":2,"failures":0,"studytime":4},{"id":257,"risk":19,"actual":1,"g1":10,"absences":6,"failures":0,"studytime":1},{"id":540,"risk":63,"actual":0,"g1":9,"absences":5,"failures":0,"studytime":1},{"id":627,"risk":63,"actual":0,"g1":9,"absences":3,"failures":0,"studytime":1}],"risk_hist":{"labels":["0-5","5-10","10-15","15-20","20-25","25-30","30-35","35-40","40-45","45-50","50-55","55-60","60-65","65-70","70-75","75-80","80-85","85-90","90-95","95-100"],"pass":[0,3,22,43,18,9,10,4,3,4,1,8,6,2,3,1,1,0,0,0],"fail":[0,0,0,1,0,0,1,0,1,0,3,2,5,5,1,3,3,0,0,0]}},"nog1":{"label":"Pre-term watchlist (no grades at all)","use_g1":false,"n_cat":17,"n_num":13,"thresholds":{"Decision Tree":0.05,"Random Forest":0.32},"cv_best":{"Decision Tree":{"recall":0.787,"params":{"max_depth":6,"min_samples_leaf":20}},"Random Forest":{"recall":0.613,"params":{"max_depth":4,"min_samples_leaf":5,"n_estimators":400}}},"results":[{"model":"Decision Tree","threshold_label":"default 0.50","threshold":0.5,"recall":0.64,"fn":9,"tp":16,"fp":39,"tn":99,"precision":0.291,"f1":0.4,"accuracy":0.706},{"model":"Decision Tree","threshold_label":"recall-tuned","threshold":0.05,"recall":0.92,"fn":2,"tp":23,"fp":83,"tn":55,"precision":0.217,"f1":0.351,"accuracy":0.479},{"model":"Random Forest","threshold_label":"default 0.50","threshold":0.5,"recall":0.44,"fn":14,"tp":11,"fp":19,"tn":119,"precision":0.367,"f1":0.4,"accuracy":0.798},{"model":"Random Forest","threshold_label":"recall-tuned","threshold":0.32,"recall":0.88,"fn":3,"tp":22,"fp":62,"tn":76,"precision":0.262,"f1":0.404,"accuracy":0.601}],"confusion_tuned":{"Decision Tree":{"tn":55,"fp":83,"fn":2,"tp":23},"Random Forest":{"tn":76,"fp":62,"fn":3,"tp":22}},"importances":[{"feature":"failures","importance":0.1664},{"feature":"school_MS","importance":0.135},{"feature":"higher_yes","importance":0.0871},{"feature":"studytime","importance":0.0699},{"feature":"Fedu","importance":0.0577},{"feature":"famrel","importance":0.0431},{"feature":"absences","importance":0.04},{"feature":"goout","importance":0.0364},{"feature":"Medu","importance":0.033},{"feature":"freetime","importance":0.0285},{"feature":"Walc","importance":0.0276},{"feature":"Dalc","importance":0.0191}],"sweep":{"Decision Tree":[{"t":0.05,"recall":0.8,"precision":0.215,"flag_share":0.574},{"t":0.06,"recall":0.8,"precision":0.215,"flag_share":0.574},{"t":0.07,"recall":0.8,"precision":0.215,"flag_share":0.574},{"t":0.08,"recall":0.8,"precision":0.215,"flag_share":0.574},{"t":0.09,"recall":0.8,"precision":0.215,"flag_share":0.574},{"t":0.1,"recall":0.8,"precision":0.215,"flag_share":0.574},{"t":0.11,"recall":0.8,"precision":0.215,"flag_share":0.574},{"t":0.12,"recall":0.8,"precision":0.215,"flag_share":0.574},{"t":0.13,"recall":0.8,"precision":0.215,"flag_share":0.574},{"t":0.14,"recall":0.8,"precision":0.215,"flag_share":0.574},{"t":0.15,"recall":0.8,"precision":0.215,"flag_share":0.574},{"t":0.16,"recall":0.8,"precision":0.224,"flag_share":0.551},{"t":0.17,"recall":0.8,"precision":0.232,"flag_share":0.533},{"t":0.18,"recall":0.8,"precision":0.232,"flag_share":0.533},{"t":0.19,"recall":0.8,"precision":0.242,"flag_share":0.51},{"t":0.2,"recall":0.8,"precision":0.246,"flag_share":0.502},{"t":0.21,"recall":0.8,"precision":0.247,"flag_share":0.5},{"t":0.22,"recall":0.8,"precision":0.251,"flag_share":0.492},{"t":0.23,"recall":0.787,"precision":0.26,"flag_share":0.467},{"t":0.24,"recall":0.787,"precision":0.268,"flag_share":0.453},{"t":0.25,"recall":0.787,"precision":0.268,"flag_share":0.453},{"t":0.26,"recall":0.787,"precision":0.268,"flag_share":0.453},{"t":0.27,"recall":0.787,"precision":0.268,"flag_share":0.453},{"t":0.28,"recall":0.787,"precision":0.268,"flag_share":0.453},{"t":0.29,"recall":0.787,"precision":0.276,"flag_share":0.44},{"t":0.3,"recall":0.787,"precision":0.276,"flag_share":0.44},{"t":0.31,"recall":0.787,"precision":0.276,"flag_share":0.44},{"t":0.32,"recall":0.787,"precision":0.276,"flag_share":0.44},{"t":0.33,"recall":0.787,"precision":0.276,"flag_share":0.44},{"t":0.34,"recall":0.787,"precision":0.276,"flag_share":0.44},{"t":0.35,"recall":0.787,"precision":0.276,"flag_share":0.44},{"t":0.36,"recall":0.787,"precision":0.276,"flag_share":0.44},{"t":0.37,"recall":0.787,"precision":0.276,"flag_share":0.44},{"t":0.38,"recall":0.787,"precision":0.288,"flag_share":0.422},{"t":0.39,"recall":0.787,"precision":0.298,"flag_share":0.407},{"t":0.4,"recall":0.787,"precision":0.298,"flag_share":0.407},{"t":0.41,"recall":0.787,"precision":0.298,"flag_share":0.407},{"t":0.42,"recall":0.787,"precision":0.316,"flag_share":0.385},{"t":0.43,"recall":0.787,"precision":0.316,"flag_share":0.385},{"t":0.44,"recall":0.787,"precision":0.316,"flag_share":0.385},{"t":0.45,"recall":0.787,"precision":0.316,"flag_share":0.385},{"t":0.46,"recall":0.787,"precision":0.319,"flag_share":0.381},{"t":0.47,"recall":0.787,"precision":0.319,"flag_share":0.381},{"t":0.48,"recall":0.787,"precision":0.331,"flag_share":0.366},{"t":0.49,"recall":0.787,"precision":0.331,"flag_share":0.366},{"t":0.5,"recall":0.787,"precision":0.349,"flag_share":0.348},{"t":0.51,"recall":0.787,"precision":0.349,"flag_share":0.348},{"t":0.52,"recall":0.787,"precision":0.349,"flag_share":0.348},{"t":0.53,"recall":0.747,"precision":0.366,"flag_share":0.315},{"t":0.54,"recall":0.733,"precision":0.385,"flag_share":0.294},{"t":0.55,"recall":0.72,"precision":0.397,"flag_share":0.28},{"t":0.56,"recall":0.72,"precision":0.397,"flag_share":0.28},{"t":0.57,"recall":0.72,"precision":0.397,"flag_share":0.28},{"t":0.58,"recall":0.72,"precision":0.397,"flag_share":0.28},{"t":0.59,"recall":0.707,"precision":0.402,"flag_share":0.272},{"t":0.6,"recall":0.707,"precision":0.402,"flag_share":0.272}],"Random Forest":[{"t":0.05,"recall":1.0,"precision":0.154,"flag_share":1.0},{"t":0.06,"recall":1.0,"precision":0.154,"flag_share":1.0},{"t":0.07,"recall":1.0,"precision":0.154,"flag_share":1.0},{"t":0.08,"recall":1.0,"precision":0.154,"flag_share":1.0},{"t":0.09,"recall":1.0,"precision":0.154,"flag_share":1.0},{"t":0.1,"recall":1.0,"precision":0.154,"flag_share":1.0},{"t":0.11,"recall":1.0,"precision":0.155,"flag_share":0.998},{"t":0.12,"recall":0.987,"precision":0.153,"flag_share":0.996},{"t":0.13,"recall":0.987,"precision":0.153,"flag_share":0.996},{"t":0.14,"recall":0.987,"precision":0.154,"flag_share":0.988},{"t":0.15,"recall":0.987,"precision":0.154,"flag_share":0.986},{"t":0.16,"recall":0.987,"precision":0.156,"flag_share":0.977},{"t":0.17,"recall":0.987,"precision":0.159,"flag_share":0.957},{"t":0.18,"recall":0.987,"precision":0.163,"flag_share":0.932},{"t":0.19,"recall":0.987,"precision":0.168,"flag_share":0.907},{"t":0.2,"recall":0.973,"precision":0.171,"flag_share":0.881},{"t":0.21,"recall":0.96,"precision":0.173,"flag_share":0.856},{"t":0.22,"recall":0.96,"precision":0.182,"flag_share":0.813},{"t":0.23,"recall":0.947,"precision":0.186,"flag_share":0.784},{"t":0.24,"recall":0.92,"precision":0.194,"flag_share":0.733},{"t":0.25,"recall":0.92,"precision":0.202,"flag_share":0.702},{"t":0.26,"recall":0.907,"precision":0.209,"flag_share":0.671},{"t":0.27,"recall":0.907,"precision":0.22,"flag_share":0.636},{"t":0.28,"recall":0.907,"precision":0.232,"flag_share":0.603},{"t":0.29,"recall":0.907,"precision":0.244,"flag_share":0.574},{"t":0.3,"recall":0.907,"precision":0.252,"flag_share":0.556},{"t":0.31,"recall":0.907,"precision":0.26,"flag_share":0.539},{"t":0.32,"recall":0.907,"precision":0.264,"flag_share":0.531},{"t":0.33,"recall":0.893,"precision":0.276,"flag_share":0.5},{"t":0.34,"recall":0.88,"precision":0.281,"flag_share":0.484},{"t":0.35,"recall":0.84,"precision":0.286,"flag_share":0.453},{"t":0.36,"recall":0.827,"precision":0.298,"flag_share":0.428},{"t":0.37,"recall":0.813,"precision":0.313,"flag_share":0.401},{"t":0.38,"recall":0.813,"precision":0.328,"flag_share":0.383},{"t":0.39,"recall":0.813,"precision":0.333,"flag_share":0.377},{"t":0.4,"recall":0.813,"precision":0.343,"flag_share":0.366},{"t":0.41,"recall":0.813,"precision":0.361,"flag_share":0.348},{"t":0.42,"recall":0.8,"precision":0.373,"flag_share":0.331},{"t":0.43,"recall":0.773,"precision":0.384,"flag_share":0.311},{"t":0.44,"recall":0.773,"precision":0.403,"flag_share":0.296},{"t":0.45,"recall":0.747,"precision":0.415,"flag_share":0.278},{"t":0.46,"recall":0.72,"precision":0.422,"flag_share":0.263},{"t":0.47,"recall":0.72,"precision":0.466,"flag_share":0.239},{"t":0.48,"recall":0.653,"precision":0.462,"flag_share":0.218},{"t":0.49,"recall":0.613,"precision":0.479,"flag_share":0.198},{"t":0.5,"recall":0.613,"precision":0.5,"flag_share":0.189},{"t":0.51,"recall":0.56,"precision":0.519,"flag_share":0.167},{"t":0.52,"recall":0.533,"precision":0.533,"flag_share":0.154},{"t":0.53,"recall":0.52,"precision":0.542,"flag_share":0.148},{"t":0.54,"recall":0.493,"precision":0.578,"flag_share":0.132},{"t":0.55,"recall":0.467,"precision":0.574,"flag_share":0.126},{"t":0.56,"recall":0.44,"precision":0.6,"flag_share":0.113},{"t":0.57,"recall":0.413,"precision":0.585,"flag_share":0.109},{"t":0.58,"recall":0.373,"precision":0.609,"flag_share":0.095},{"t":0.59,"recall":0.36,"precision":0.659,"flag_share":0.084},{"t":0.6,"recall":0.36,"precision":0.659,"flag_share":0.084}]},"watchlist":[{"Student ID":574,"Priority":"HIGH - meet this week","Fail risk %":76,"Why flagged":"1 past class failure(s); 12 absences; Studies <2 hrs/week; Low parental education; No plan for higher education; High alcohol use","absences":12,"failures":1,"studytime":1},{"Student ID":605,"Priority":"HIGH - meet this week","Fail risk %":71,"Why flagged":"1 past class failure(s); Studies <2 hrs/week; Low parental education; No plan for higher education; High social time, low study time","absences":0,"failures":1,"studytime":1},{"Student ID":571,"Priority":"HIGH - meet this week","Fail risk %":71,"Why flagged":"3 past class failure(s); Studies <2 hrs/week; No plan for higher education","absences":4,"failures":3,"studytime":1},{"Student ID":583,"Priority":"HIGH - meet this week","Fail risk %":70,"Why flagged":"1 past class failure(s); Studies <2 hrs/week; No plan for higher education; High social time, low study time","absences":0,"failures":1,"studytime":1},{"Student ID":552,"Priority":"HIGH - meet this week","Fail risk %":69,"Why flagged":"2 past class failure(s); Low parental education; No plan for higher education; High alcohol use","absences":2,"failures":2,"studytime":2},{"Student ID":557,"Priority":"HIGH - meet this week","Fail risk %":69,"Why flagged":"3 past class failure(s); High social time, low study time","absences":2,"failures":3,"studytime":2},{"Student ID":559,"Priority":"HIGH - meet this week","Fail risk %":68,"Why flagged":"1 past class failure(s); Studies <2 hrs/week; Low parental education","absences":0,"failures":1,"studytime":1},{"Student ID":471,"Priority":"HIGH - meet this week","Fail risk %":66,"Why flagged":"1 past class failure(s); High social time, low study time","absences":2,"failures":1,"studytime":2},{"Student ID":639,"Priority":"HIGH - meet this week","Fail risk %":66,"Why flagged":"1 past class failure(s); Studies <2 hrs/week; Low parental education","absences":0,"failures":1,"studytime":1},{"Student ID":587,"Priority":"HIGH - meet this week","Fail risk %":66,"Why flagged":"1 past class failure(s)","absences":3,"failures":1,"studytime":2},{"Student ID":512,"Priority":"HIGH - meet this week","Fail risk %":65,"Why flagged":"1 past class failure(s); 9 absences; Low parental education","absences":9,"failures":1,"studytime":2},{"Student ID":256,"Priority":"HIGH - meet this week","Fail risk %":64,"Why flagged":"1 past class failure(s); 26 absences; Studies <2 hrs/week; No plan for higher education","absences":26,"failures":1,"studytime":1},{"Student ID":481,"Priority":"HIGH - meet this week","Fail risk %":63,"Why flagged":"Studies <2 hrs/week; No plan for higher education","absences":2,"failures":0,"studytime":1},{"Student ID":554,"Priority":"HIGH - meet this week","Fail risk %":63,"Why flagged":"Studies <2 hrs/week; Low parental education; No plan for higher education; High social time, low study time","absences":3,"failures":0,"studytime":1},{"Student ID":578,"Priority":"HIGH - meet this week","Fail risk %":63,"Why flagged":"1 past class failure(s); High social time, low study time","absences":4,"failures":1,"studytime":2},{"Student ID":488,"Priority":"HIGH - meet this week","Fail risk %":63,"Why flagged":"1 past class failure(s); 6 absences; Low parental education; No plan for higher education","absences":6,"failures":1,"studytime":3},{"Student ID":627,"Priority":"MEDIUM - check in / monitor","Fail risk %":59,"Why flagged":"Studies <2 hrs/week; No plan for higher education","absences":3,"failures":0,"studytime":1},{"Student ID":173,"Priority":"MEDIUM - check in / monitor","Fail risk %":57,"Why flagged":"2 past class failure(s); Studies <2 hrs/week; High alcohol use; High social time, low study time","absences":0,"failures":2,"studytime":1},{"Student ID":260,"Priority":"MEDIUM - check in / monitor","Fail risk %":57,"Why flagged":"Studies <2 hrs/week; No plan for higher education; High social time, low study time","absences":4,"failures":0,"studytime":1},{"Student ID":421,"Priority":"MEDIUM - check in / monitor","Fail risk %":55,"Why flagged":"1 past class failure(s); Studies <2 hrs/week; Low parental education","absences":5,"failures":1,"studytime":1},{"Student ID":423,"Priority":"MEDIUM - check in / monitor","Fail risk %":55,"Why flagged":"11 absences; Studies <2 hrs/week; No plan for higher education","absences":11,"failures":0,"studytime":1},{"Student ID":461,"Priority":"MEDIUM - check in / monitor","Fail risk %":55,"Why flagged":"Studies <2 hrs/week; Low parental education; High alcohol use","absences":0,"failures":0,"studytime":1},{"Student ID":178,"Priority":"MEDIUM - check in / monitor","Fail risk %":54,"Why flagged":"Low parental education; No plan for higher education; High alcohol use; High social time, low study time","absences":0,"failures":0,"studytime":2},{"Student ID":629,"Priority":"MEDIUM - check in / monitor","Fail risk %":54,"Why flagged":"Studies <2 hrs/week; High social time, low study time","absences":4,"failures":0,"studytime":1},{"Student ID":440,"Priority":"MEDIUM - check in / monitor","Fail risk %":54,"Why flagged":"Low parental education; High alcohol use; High social time, low study time","absences":0,"failures":0,"studytime":2},{"Student ID":184,"Priority":"MEDIUM - check in / monitor","Fail risk %":52,"Why flagged":"1 past class failure(s); Studies <2 hrs/week; High alcohol use; High social time, low study time","absences":4,"failures":1,"studytime":1},{"Student ID":531,"Priority":"MEDIUM - check in / monitor","Fail risk %":52,"Why flagged":"Low parental education; High alcohol use","absences":0,"failures":0,"studytime":2},{"Student ID":496,"Priority":"MEDIUM - check in / monitor","Fail risk %":52,"Why flagged":"Studies <2 hrs/week; Low parental education; High social time, low study time","absences":2,"failures":0,"studytime":1},{"Student ID":509,"Priority":"MEDIUM - check in / monitor","Fail risk %":51,"Why flagged":"Low parental education","absences":0,"failures":0,"studytime":2},{"Student ID":322,"Priority":"MEDIUM - check in / monitor","Fail risk %":50,"Why flagged":"1 past class failure(s); No plan for higher education; High alcohol use","absences":0,"failures":1,"studytime":2},{"Student ID":523,"Priority":"MEDIUM - check in / monitor","Fail risk %":50,"Why flagged":"No plan for higher education; High alcohol use","absences":2,"failures":0,"studytime":4},{"Student ID":646,"Priority":"MEDIUM - check in / monitor","Fail risk %":50,"Why flagged":"6 absences; Low parental education","absences":6,"failures":0,"studytime":2},{"Student ID":172,"Priority":"MEDIUM - check in / monitor","Fail risk %":49,"Why flagged":"1 past class failure(s); High alcohol use; High social time, low study time","absences":0,"failures":1,"studytime":2},{"Student ID":515,"Priority":"MEDIUM - check in / monitor","Fail risk %":49,"Why flagged":"8 absences; Low parental education; High alcohol use; High social time, low study time","absences":8,"failures":0,"studytime":2},{"Student ID":499,"Priority":"MEDIUM - check in / monitor","Fail risk %":49,"Why flagged":"Studies <2 hrs/week; High social time, low study time","absences":0,"failures":0,"studytime":1},{"Student ID":526,"Priority":"MEDIUM - check in / monitor","Fail risk %":49,"Why flagged":"Studies <2 hrs/week","absences":1,"failures":0,"studytime":1},{"Student ID":622,"Priority":"MEDIUM - check in / monitor","Fail risk %":49,"Why flagged":"High alcohol use; High social time, low study time","absences":0,"failures":0,"studytime":2},{"Student ID":589,"Priority":"MEDIUM - check in / monitor","Fail risk %":48,"Why flagged":"Studies <2 hrs/week","absences":0,"failures":0,"studytime":1},{"Student ID":462,"Priority":"MEDIUM - check in / monitor","Fail risk %":48,"Why flagged":"Low parental education","absences":0,"failures":0,"studytime":2},{"Student ID":435,"Priority":"MEDIUM - check in / monitor","Fail risk %":48,"Why flagged":"Low parental education","absences":0,"failures":0,"studytime":2},{"Student ID":449,"Priority":"MEDIUM - check in / monitor","Fail risk %":47,"Why flagged":"Studies <2 hrs/week","absences":3,"failures":0,"studytime":1},{"Student ID":456,"Priority":"MEDIUM - check in / monitor","Fail risk %":47,"Why flagged":"Low parental education","absences":0,"failures":0,"studytime":2},{"Student ID":441,"Priority":"MEDIUM - check in / monitor","Fail risk %":47,"Why flagged":"Low parental education; High alcohol use","absences":4,"failures":0,"studytime":2},{"Student ID":180,"Priority":"MEDIUM - check in / monitor","Fail risk %":47,"Why flagged":"No plan for higher education; High alcohol use; High social time, low study time","absences":0,"failures":0,"studytime":2},{"Student ID":305,"Priority":"MEDIUM - check in / monitor","Fail risk %":47,"Why flagged":"8 absences; Studies <2 hrs/week; No plan for higher education; High social time, low study time","absences":8,"failures":0,"studytime":1},{"Student ID":528,"Priority":"MEDIUM - check in / monitor","Fail risk %":46,"Why flagged":"Studies <2 hrs/week","absences":5,"failures":0,"studytime":1},{"Student ID":519,"Priority":"MEDIUM - check in / monitor","Fail risk %":46,"Why flagged":"No single obvious flag - review holistically","absences":0,"failures":0,"studytime":2},{"Student ID":540,"Priority":"MEDIUM - check in / monitor","Fail risk %":45,"Why flagged":"Studies <2 hrs/week","absences":5,"failures":0,"studytime":1},{"Student ID":493,"Priority":"MEDIUM - check in / monitor","Fail risk %":45,"Why flagged":"Studies <2 hrs/week; Low parental education; High alcohol use; High social time, low study time","absences":5,"failures":0,"studytime":1},{"Student ID":460,"Priority":"MEDIUM - check in / monitor","Fail risk %":44,"Why flagged":"Low parental education","absences":1,"failures":0,"studytime":2},{"Student ID":645,"Priority":"MEDIUM - check in / monitor","Fail risk %":43,"Why flagged":"High social time, low study time","absences":4,"failures":0,"studytime":2},{"Student ID":585,"Priority":"MEDIUM - check in / monitor","Fail risk %":43,"Why flagged":"No plan for higher education","absences":5,"failures":0,"studytime":3},{"Student ID":299,"Priority":"MEDIUM - check in / monitor","Fail risk %":43,"Why flagged":"8 absences; No plan for higher education","absences":8,"failures":0,"studytime":2},{"Student ID":325,"Priority":"MEDIUM - check in / monitor","Fail risk %":43,"Why flagged":"22 absences; Studies <2 hrs/week; High alcohol use; High social time, low study time","absences":22,"failures":0,"studytime":1},{"Student ID":619,"Priority":"MEDIUM - check in / monitor","Fail risk %":42,"Why flagged":"6 absences","absences":6,"failures":0,"studytime":2},{"Student ID":444,"Priority":"MEDIUM - check in / monitor","Fail risk %":41,"Why flagged":"High social time, low study time","absences":4,"failures":0,"studytime":2},{"Student ID":541,"Priority":"MEDIUM - check in / monitor","Fail risk %":41,"Why flagged":"No single obvious flag - review holistically","absences":0,"failures":0,"studytime":2},{"Student ID":474,"Priority":"MEDIUM - check in / monitor","Fail risk %":41,"Why flagged":"Studies <2 hrs/week; High alcohol use; High social time, low study time","absences":2,"failures":0,"studytime":1},{"Student ID":44,"Priority":"MEDIUM - check in / monitor","Fail risk %":40,"Why flagged":"1 past class failure(s); 14 absences","absences":14,"failures":1,"studytime":2},{"Student ID":371,"Priority":"MEDIUM - check in / monitor","Fail risk %":40,"Why flagged":"Studies <2 hrs/week; High alcohol use; High social time, low study time","absences":2,"failures":0,"studytime":1},{"Student ID":419,"Priority":"MEDIUM - check in / monitor","Fail risk %":40,"Why flagged":"10 absences; Studies <2 hrs/week; High alcohol use; High social time, low study time","absences":10,"failures":0,"studytime":1},{"Student ID":521,"Priority":"MEDIUM - check in / monitor","Fail risk %":40,"Why flagged":"No single obvious flag - review holistically","absences":0,"failures":0,"studytime":2},{"Student ID":596,"Priority":"MEDIUM - check in / monitor","Fail risk %":39,"Why flagged":"No single obvious flag - review holistically","absences":0,"failures":0,"studytime":2},{"Student ID":140,"Priority":"MEDIUM - check in / monitor","Fail risk %":39,"Why flagged":"High alcohol use; High social time, low study time","absences":2,"failures":0,"studytime":2},{"Student ID":318,"Priority":"MEDIUM - check in / monitor","Fail risk %":39,"Why flagged":"15 absences; No plan for higher education","absences":15,"failures":0,"studytime":2},{"Student ID":176,"Priority":"MEDIUM - check in / monitor","Fail risk %":38,"Why flagged":"Studies <2 hrs/week; High alcohol use; High social time, low study time","absences":2,"failures":0,"studytime":1},{"Student ID":219,"Priority":"MEDIUM - check in / monitor","Fail risk %":37,"Why flagged":"1 past class failure(s); 14 absences; High alcohol use","absences":14,"failures":1,"studytime":3},{"Student ID":136,"Priority":"MEDIUM - check in / monitor","Fail risk %":37,"Why flagged":"Studies <2 hrs/week","absences":4,"failures":0,"studytime":1},{"Student ID":251,"Priority":"MEDIUM - check in / monitor","Fail risk %":37,"Why flagged":"Studies <2 hrs/week","absences":4,"failures":0,"studytime":1},{"Student ID":144,"Priority":"MEDIUM - check in / monitor","Fail risk %":37,"Why flagged":"8 absences; Studies <2 hrs/week; Low parental education","absences":8,"failures":0,"studytime":1},{"Student ID":54,"Priority":"MEDIUM - check in / monitor","Fail risk %":36,"Why flagged":"Studies <2 hrs/week; High alcohol use; High social time, low study time","absences":0,"failures":0,"studytime":1},{"Student ID":382,"Priority":"MEDIUM - check in / monitor","Fail risk %":36,"Why flagged":"Studies <2 hrs/week; High alcohol use; High social time, low study time","absences":2,"failures":0,"studytime":1},{"Student ID":73,"Priority":"MEDIUM - check in / monitor","Fail risk %":36,"Why flagged":"Studies <2 hrs/week","absences":0,"failures":0,"studytime":1},{"Student ID":267,"Priority":"MEDIUM - check in / monitor","Fail risk %":35,"Why flagged":"8 absences; High alcohol use; High social time, low study time","absences":8,"failures":0,"studytime":2},{"Student ID":507,"Priority":"MEDIUM - check in / monitor","Fail risk %":35,"Why flagged":"Low parental education","absences":0,"failures":0,"studytime":3},{"Student ID":642,"Priority":"MEDIUM - check in / monitor","Fail risk %":34,"Why flagged":"High social time, low study time","absences":0,"failures":0,"studytime":2},{"Student ID":542,"Priority":"MEDIUM - check in / monitor","Fail risk %":34,"Why flagged":"High alcohol use","absences":1,"failures":0,"studytime":3},{"Student ID":141,"Priority":"MEDIUM - check in / monitor","Fail risk %":34,"Why flagged":"Low parental education","absences":0,"failures":0,"studytime":2},{"Student ID":234,"Priority":"MEDIUM - check in / monitor","Fail risk %":33,"Why flagged":"High social time, low study time","absences":0,"failures":0,"studytime":2},{"Student ID":522,"Priority":"MEDIUM - check in / monitor","Fail risk %":33,"Why flagged":"High social time, low study time","absences":4,"failures":0,"studytime":2},{"Student ID":404,"Priority":"MEDIUM - check in / monitor","Fail risk %":33,"Why flagged":"High alcohol use; High social time, low study time","absences":4,"failures":0,"studytime":2},{"Student ID":516,"Priority":"MEDIUM - check in / monitor","Fail risk %":33,"Why flagged":"No single obvious flag - review holistically","absences":0,"failures":0,"studytime":2},{"Student ID":134,"Priority":"MEDIUM - check in / monitor","Fail risk %":33,"Why flagged":"Studies <2 hrs/week; High social time, low study time","absences":2,"failures":0,"studytime":1},{"Student ID":288,"Priority":"MEDIUM - check in / monitor","Fail risk %":32,"Why flagged":"High social time, low study time","absences":2,"failures":0,"studytime":2}],"watchlist_stats":{"flagged":84,"class":163,"flag_share_pct":52,"real_fails":25,"caught":22,"caught_pct":88},"test_risk":[{"id":234,"risk":33,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":2},{"id":219,"risk":37,"actual":1,"g1":null,"absences":14,"failures":1,"studytime":3},{"id":361,"risk":31,"actual":0,"g1":null,"absences":9,"failures":0,"studytime":2},{"id":14,"risk":21,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":3},{"id":512,"risk":65,"actual":1,"g1":null,"absences":9,"failures":1,"studytime":2},{"id":293,"risk":26,"actual":0,"g1":null,"absences":4,"failures":0,"studytime":3},{"id":140,"risk":39,"actual":0,"g1":null,"absences":2,"failures":0,"studytime":2},{"id":48,"risk":23,"actual":0,"g1":null,"absences":4,"failures":0,"studytime":2},{"id":178,"risk":54,"actual":1,"g1":null,"absences":0,"failures":0,"studytime":2},{"id":302,"risk":27,"actual":0,"g1":null,"absences":2,"failures":0,"studytime":3},{"id":296,"risk":30,"actual":0,"g1":null,"absences":2,"failures":0,"studytime":2},{"id":208,"risk":27,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":1},{"id":136,"risk":37,"actual":0,"g1":null,"absences":4,"failures":0,"studytime":1},{"id":596,"risk":39,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":2},{"id":309,"risk":31,"actual":0,"g1":null,"absences":4,"failures":0,"studytime":2},{"id":528,"risk":46,"actual":1,"g1":null,"absences":5,"failures":0,"studytime":1},{"id":440,"risk":54,"actual":1,"g1":null,"absences":0,"failures":0,"studytime":2},{"id":339,"risk":27,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":3},{"id":103,"risk":31,"actual":0,"g1":null,"absences":16,"failures":0,"studytime":2},{"id":64,"risk":21,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":2},{"id":126,"risk":23,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":2},{"id":318,"risk":39,"actual":0,"g1":null,"absences":15,"failures":0,"studytime":2},{"id":585,"risk":43,"actual":1,"g1":null,"absences":5,"failures":0,"studytime":3},{"id":322,"risk":50,"actual":0,"g1":null,"absences":0,"failures":1,"studytime":2},{"id":233,"risk":20,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":3},{"id":44,"risk":40,"actual":0,"g1":null,"absences":14,"failures":1,"studytime":2},{"id":1,"risk":29,"actual":0,"g1":null,"absences":2,"failures":0,"studytime":2},{"id":639,"risk":66,"actual":1,"g1":null,"absences":0,"failures":1,"studytime":1},{"id":305,"risk":47,"actual":1,"g1":null,"absences":8,"failures":0,"studytime":1},{"id":343,"risk":13,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":4},{"id":218,"risk":30,"actual":0,"g1":null,"absences":6,"failures":0,"studytime":4},{"id":235,"risk":27,"actual":0,"g1":null,"absences":12,"failures":0,"studytime":3},{"id":260,"risk":57,"actual":0,"g1":null,"absences":4,"failures":0,"studytime":1},{"id":207,"risk":31,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":1},{"id":421,"risk":55,"actual":0,"g1":null,"absences":5,"failures":1,"studytime":1},{"id":50,"risk":28,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":2},{"id":646,"risk":50,"actual":1,"g1":null,"absences":6,"failures":0,"studytime":2},{"id":256,"risk":64,"actual":1,"g1":null,"absences":26,"failures":1,"studytime":1},{"id":441,"risk":47,"actual":1,"g1":null,"absences":4,"failures":0,"studytime":2},{"id":391,"risk":30,"actual":0,"g1":null,"absences":8,"failures":0,"studytime":3},{"id":231,"risk":25,"actual":0,"g1":null,"absences":10,"failures":0,"studytime":2},{"id":106,"risk":24,"actual":0,"g1":null,"absences":4,"failures":0,"studytime":4},{"id":333,"risk":22,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":3},{"id":236,"risk":24,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":2},{"id":267,"risk":35,"actual":0,"g1":null,"absences":8,"failures":0,"studytime":2},{"id":589,"risk":48,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":1},{"id":559,"risk":68,"actual":0,"g1":null,"absences":0,"failures":1,"studytime":1},{"id":531,"risk":52,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":2},{"id":419,"risk":40,"actual":0,"g1":null,"absences":10,"failures":0,"studytime":1},{"id":180,"risk":47,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":2},{"id":488,"risk":63,"actual":1,"g1":null,"absences":6,"failures":1,"studytime":3},{"id":209,"risk":22,"actual":0,"g1":null,"absences":8,"failures":0,"studytime":2},{"id":522,"risk":33,"actual":1,"g1":null,"absences":4,"failures":0,"studytime":2},{"id":168,"risk":25,"actual":1,"g1":null,"absences":0,"failures":0,"studytime":2},{"id":523,"risk":50,"actual":1,"g1":null,"absences":2,"failures":0,"studytime":4},{"id":33,"risk":22,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":2},{"id":224,"risk":15,"actual":0,"g1":null,"absences":4,"failures":0,"studytime":4},{"id":189,"risk":21,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":2},{"id":411,"risk":19,"actual":0,"g1":null,"absences":2,"failures":0,"studytime":3},{"id":73,"risk":36,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":1},{"id":462,"risk":48,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":2},{"id":444,"risk":41,"actual":0,"g1":null,"absences":4,"failures":0,"studytime":2},{"id":172,"risk":49,"actual":1,"g1":null,"absences":0,"failures":1,"studytime":2},{"id":102,"risk":27,"actual":0,"g1":null,"absences":2,"failures":0,"studytime":1},{"id":371,"risk":40,"actual":0,"g1":null,"absences":2,"failures":0,"studytime":1},{"id":292,"risk":25,"actual":0,"g1":null,"absences":2,"failures":0,"studytime":3},{"id":338,"risk":26,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":4},{"id":435,"risk":48,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":2},{"id":368,"risk":30,"actual":0,"g1":null,"absences":2,"failures":0,"studytime":1},{"id":91,"risk":31,"actual":0,"g1":null,"absences":6,"failures":0,"studytime":1},{"id":251,"risk":37,"actual":0,"g1":null,"absences":4,"failures":0,"studytime":1},{"id":289,"risk":16,"actual":0,"g1":null,"absences":2,"failures":0,"studytime":4},{"id":519,"risk":46,"actual":1,"g1":null,"absences":0,"failures":0,"studytime":2},{"id":28,"risk":24,"actual":0,"g1":null,"absences":2,"failures":0,"studytime":2},{"id":83,"risk":29,"actual":0,"g1":null,"absences":2,"failures":0,"studytime":2},{"id":578,"risk":63,"actual":0,"g1":null,"absences":4,"failures":1,"studytime":2},{"id":398,"risk":20,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":3},{"id":642,"risk":34,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":2},{"id":623,"risk":30,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":3},{"id":357,"risk":19,"actual":0,"g1":null,"absences":2,"failures":0,"studytime":3},{"id":220,"risk":31,"actual":0,"g1":null,"absences":2,"failures":0,"studytime":2},{"id":509,"risk":51,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":2},{"id":278,"risk":30,"actual":0,"g1":null,"absences":2,"failures":0,"studytime":1},{"id":358,"risk":31,"actual":0,"g1":null,"absences":8,"failures":0,"studytime":1},{"id":299,"risk":43,"actual":0,"g1":null,"absences":8,"failures":0,"studytime":2},{"id":13,"risk":20,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":2},{"id":629,"risk":54,"actual":1,"g1":null,"absences":4,"failures":0,"studytime":1},{"id":496,"risk":52,"actual":0,"g1":null,"absences":2,"failures":0,"studytime":1},{"id":583,"risk":70,"actual":1,"g1":null,"absences":0,"failures":1,"studytime":1},{"id":493,"risk":45,"actual":0,"g1":null,"absences":5,"failures":0,"studytime":1},{"id":410,"risk":23,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":2},{"id":345,"risk":18,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":2},{"id":471,"risk":66,"actual":0,"g1":null,"absences":2,"failures":1,"studytime":2},{"id":35,"risk":29,"actual":0,"g1":null,"absences":4,"failures":0,"studytime":1},{"id":22,"risk":27,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":2},{"id":552,"risk":69,"actual":0,"g1":null,"absences":2,"failures":2,"studytime":2},{"id":507,"risk":35,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":3},{"id":141,"risk":34,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":2},{"id":144,"risk":37,"actual":0,"g1":null,"absences":8,"failures":0,"studytime":1},{"id":461,"risk":55,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":1},{"id":515,"risk":49,"actual":0,"g1":null,"absences":8,"failures":0,"studytime":2},{"id":605,"risk":71,"actual":1,"g1":null,"absences":0,"failures":1,"studytime":1},{"id":226,"risk":22,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":2},{"id":376,"risk":30,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":3},{"id":94,"risk":20,"actual":0,"g1":null,"absences":2,"failures":0,"studytime":4},{"id":288,"risk":32,"actual":0,"g1":null,"absences":2,"failures":0,"studytime":2},{"id":606,"risk":29,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":4},{"id":109,"risk":25,"actual":0,"g1":null,"absences":2,"failures":0,"studytime":3},{"id":404,"risk":33,"actual":0,"g1":null,"absences":4,"failures":0,"studytime":2},{"id":423,"risk":55,"actual":0,"g1":null,"absences":11,"failures":0,"studytime":1},{"id":636,"risk":28,"actual":0,"g1":null,"absences":4,"failures":0,"studytime":2},{"id":587,"risk":66,"actual":1,"g1":null,"absences":3,"failures":1,"studytime":2},{"id":541,"risk":41,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":2},{"id":382,"risk":36,"actual":0,"g1":null,"absences":2,"failures":0,"studytime":1},{"id":449,"risk":47,"actual":0,"g1":null,"absences":3,"failures":0,"studytime":1},{"id":499,"risk":49,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":1},{"id":417,"risk":17,"actual":0,"g1":null,"absences":5,"failures":0,"studytime":3},{"id":66,"risk":25,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":4},{"id":54,"risk":36,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":1},{"id":474,"risk":41,"actual":0,"g1":null,"absences":2,"failures":0,"studytime":1},{"id":63,"risk":19,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":3},{"id":554,"risk":63,"actual":0,"g1":null,"absences":3,"failures":0,"studytime":1},{"id":41,"risk":31,"actual":0,"g1":null,"absences":8,"failures":0,"studytime":1},{"id":594,"risk":27,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":2},{"id":571,"risk":71,"actual":1,"g1":null,"absences":4,"failures":3,"studytime":1},{"id":557,"risk":69,"actual":0,"g1":null,"absences":2,"failures":3,"studytime":2},{"id":173,"risk":57,"actual":0,"g1":null,"absences":0,"failures":2,"studytime":1},{"id":110,"risk":29,"actual":0,"g1":null,"absences":4,"failures":0,"studytime":1},{"id":330,"risk":30,"actual":0,"g1":null,"absences":10,"failures":0,"studytime":2},{"id":306,"risk":27,"actual":0,"g1":null,"absences":6,"failures":0,"studytime":2},{"id":626,"risk":32,"actual":1,"g1":null,"absences":0,"failures":0,"studytime":2},{"id":277,"risk":29,"actual":0,"g1":null,"absences":4,"failures":0,"studytime":2},{"id":516,"risk":33,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":2},{"id":521,"risk":40,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":2},{"id":176,"risk":38,"actual":0,"g1":null,"absences":2,"failures":0,"studytime":1},{"id":622,"risk":49,"actual":1,"g1":null,"absences":0,"failures":0,"studytime":2},{"id":645,"risk":43,"actual":0,"g1":null,"absences":4,"failures":0,"studytime":2},{"id":60,"risk":26,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":2},{"id":619,"risk":42,"actual":0,"g1":null,"absences":6,"failures":0,"studytime":2},{"id":359,"risk":24,"actual":0,"g1":null,"absences":2,"failures":0,"studytime":3},{"id":574,"risk":76,"actual":0,"g1":null,"absences":12,"failures":1,"studytime":1},{"id":232,"risk":26,"actual":0,"g1":null,"absences":4,"failures":0,"studytime":1},{"id":460,"risk":44,"actual":0,"g1":null,"absences":1,"failures":0,"studytime":2},{"id":526,"risk":49,"actual":0,"g1":null,"absences":1,"failures":0,"studytime":1},{"id":205,"risk":29,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":2},{"id":134,"risk":33,"actual":0,"g1":null,"absences":2,"failures":0,"studytime":1},{"id":325,"risk":43,"actual":0,"g1":null,"absences":22,"failures":0,"studytime":1},{"id":481,"risk":63,"actual":0,"g1":null,"absences":2,"failures":0,"studytime":1},{"id":375,"risk":21,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":3},{"id":8,"risk":22,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":2},{"id":377,"risk":19,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":3},{"id":269,"risk":30,"actual":0,"g1":null,"absences":7,"failures":0,"studytime":1},{"id":90,"risk":20,"actual":0,"g1":null,"absences":2,"failures":0,"studytime":3},{"id":55,"risk":32,"actual":0,"g1":null,"absences":2,"failures":0,"studytime":2},{"id":167,"risk":27,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":1},{"id":456,"risk":47,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":2},{"id":21,"risk":29,"actual":0,"g1":null,"absences":0,"failures":0,"studytime":1},{"id":542,"risk":34,"actual":0,"g1":null,"absences":1,"failures":0,"studytime":3},{"id":184,"risk":52,"actual":0,"g1":null,"absences":4,"failures":1,"studytime":1},{"id":298,"risk":20,"actual":0,"g1":null,"absences":2,"failures":0,"studytime":4},{"id":257,"risk":23,"actual":1,"g1":null,"absences":6,"failures":0,"studytime":1},{"id":540,"risk":45,"actual":0,"g1":null,"absences":5,"failures":0,"studytime":1},{"id":627,"risk":59,"actual":0,"g1":null,"absences":3,"failures":0,"studytime":1}],"risk_hist":{"labels":["0-5","5-10","10-15","15-20","20-25","25-30","30-35","35-40","40-45","45-50","50-55","55-60","60-65","65-70","70-75","75-80","80-85","85-90","90-95","95-100"],"pass":[0,0,1,8,22,27,26,12,12,11,5,6,3,4,0,1,0,0,0,0],"fail":[0,0,0,0,1,1,2,1,1,6,5,0,2,3,3,0,0,0,0,0]}}},"cloud":[[0,4,0,0,0],[9,2,0,0,1],[12,6,0,0,2],[14,0,0,0,3],[11,0,0,0,4],[12,6,0,0,5],[13,0,0,0,6],[10,2,0,0,7],[15,0,0,0,8],[12,0,0,0,9],[14,2,0,0,10],[10,0,0,0,11],[12,0,0,0,12],[12,0,0,0,13],[14,0,0,0,14],[17,6,0,0,15],[13,10,0,0,16],[13,2,0,0,17],[8,2,3,1,18],[12,6,0,0,19],[12,0,0,0,20],[11,0,0,0,21],[12,0,0,0,22],[10,2,0,0,23],[10,2,0,0,24],[10,6,0,0,25],[11,8,0,0,26],[11,0,0,0,27],[12,2,0,0,28],[12,4,0,0,29],[10,0,0,0,30],[15,2,0,0,31],[13,0,0,0,32],[13,0,0,0,33],[12,4,0,0,34],[11,4,0,0,35],[14,0,0,0,36],[13,4,0,0,37],[11,2,0,0,38],[14,8,0,0,39],[11,16,0,0,40],[10,8,0,0,41],[14,0,0,0,42],[9,0,0,0,43],[10,14,1,0,44],[10,4,0,0,45],[13,6,0,0,46],[17,2,0,0,47],[11,4,0,0,48],[13,2,0,0,49],[14,0,0,0,50],[16,0,0,0,51],[10,4,0,1,52],[13,0,0,0,53],[13,0,0,0,54],[12,2,0,0,55],[15,0,0,0,56],[15,8,0,0,57],[14,0,0,0,58],[16,2,0,0,59],[17,0,0,0,60],[10,0,0,0,61],[13,0,0,0,62],[14,0,0,0,63],[13,0,0,0,64],[16,2,0,0,65],[11,0,0,0,66],[10,0,0,0,67],[11,0,0,0,68],[15,6,0,0,69],[13,2,0,0,70],[11,0,0,0,71],[13,2,0,0,72],[13,0,0,0,73],[11,4,0,0,74],[11,0,0,0,75],[12,0,0,0,76],[13,1,0,0,77],[9,0,3,0,78],[12,14,0,0,79],[11,0,0,0,80],[10,2,0,1,81],[12,4,0,0,82],[13,2,0,0,83],[13,2,0,0,84],[12,4,0,0,85],[13,6,0,0,86],[15,4,0,0,87],[12,6,0,0,88],[9,6,0,0,89],[9,2,0,0,90],[14,6,0,0,91],[12,0,0,0,92],[13,2,0,0,93],[11,2,0,0,94],[13,4,0,0,95],[9,6,0,0,96],[13,0,0,0,97],[12,4,0,0,98],[12,2,0,0,99],[9,12,0,1,100],[16,0,0,0,101],[12,2,0,0,102],[11,16,0,0,103],[16,0,0,0,104],[10,10,0,0,105],[10,4,0,0,106],[13,4,0,0,107],[12,8,0,0,108],[15,2,0,0,109],[13,4,0,0,110],[11,4,0,0,111],[8,12,1,0,112],[18,10,0,0,113],[10,4,0,0,114],[16,6,0,0,115],[16,4,0,0,116],[14,6,0,0,117],[12,14,1,0,118],[14,2,0,0,119],[14,0,0,0,120],[14,6,0,0,121],[14,2,0,0,122],[12,4,0,0,123],[12,0,0,0,124],[9,2,0,1,125],[10,0,0,0,126],[9,0,2,0,127],[14,8,0,0,128],[13,4,0,0,129],[10,0,0,0,130],[10,10,3,1,131],[11,8,0,0,132],[11,6,0,0,133],[13,2,0,0,134],[15,12,0,0,135],[9,4,0,0,136],[13,12,1,0,137],[12,2,0,0,138],[13,4,0,0,139],[10,2,0,0,140],[14,0,0,0,141],[11,2,0,0,142],[12,10,0,0,143],[12,8,0,0,144],[9,4,0,0,145],[10,0,2,0,146],[13,6,0,0,147],[8,2,1,1,148],[9,6,0,0,149],[9,24,0,1,150],[15,0,0,0,151],[12,4,0,0,152],[13,2,0,0,153],[10,4,0,0,154],[9,22,0,1,155],[12,0,0,0,156],[11,0,0,0,157],[11,2,1,0,158],[13,6,0,0,159],[11,6,0,0,160],[9,16,0,1,161],[12,0,0,0,162],[11,0,2,1,163],[9,6,1,0,164],[13,2,0,0,165],[11,6,0,0,166],[13,0,0,0,167],[7,0,0,1,168],[9,14,3,0,169],[11,6,3,0,170],[12,4,0,0,171],[10,0,1,1,172],[9,0,2,0,173],[8,8,1,1,174],[7,4,2,1,175],[8,2,0,0,176],[9,2,1,1,177],[8,0,0,1,178],[8,10,3,1,179],[9,0,0,0,180],[17,0,0,0,181],[12,0,0,0,182],[16,0,0,0,183],[9,4,1,0,184],[16,0,0,0,185],[11,0,0,0,186],[14,0,0,0,187],[14,0,0,0,188],[10,0,0,0,189],[13,0,0,0,190],[11,4,0,0,191],[10,8,0,0,192],[11,4,0,0,193],[11,4,0,0,194],[11,0,0,0,195],[17,0,0,0,196],[14,32,0,0,197],[14,8,0,0,198],[11,6,0,0,199],[10,0,0,0,200],[13,0,0,0,201],[12,10,0,0,202],[9,6,0,0,203],[12,6,0,0,204],[12,0,0,0,205],[10,16,0,0,206],[11,0,0,0,207],[13,0,0,0,208],[14,8,0,0,209],[13,4,0,0,210],[10,16,0,0,211],[14,30,1,0,212],[11,0,0,0,213],[14,2,0,0,214],[11,4,0,0,215],[14,0,0,0,216],[13,21,0,0,217],[13,6,0,0,218],[8,14,1,1,219],[11,2,0,0,220],[14,4,0,0,221],[12,2,0,0,222],[11,0,0,0,223],[12,4,0,0,224],[13,15,0,0,225],[13,0,0,0,226],[12,10,0,0,227],[12,6,0,0,228],[14,2,0,0,229],[11,16,0,0,230],[10,10,0,0,231],[12,4,0,0,232],[12,0,0,0,233],[11,0,0,0,234],[12,12,0,0,235],[13,0,0,0,236],[10,9,3,0,237],[15,4,0,0,238],[8,4,0,1,239],[17,2,0,0,240],[10,0,0,0,241],[9,2,0,0,242],[15,0,0,0,243],[14,0,0,0,244],[12,0,0,0,245],[13,0,0,0,246],[13,0,0,0,247],[9,2,0,1,248],[12,0,0,0,249],[16,0,0,0,250],[9,4,0,0,251],[14,0,0,0,252],[10,18,1,0,253],[9,16,1,0,254],[8,14,1,1,255],[7,26,1,1,256],[10,6,0,1,257],[14,4,0,0,258],[11,10,0,0,259],[12,4,0,0,260],[13,2,0,0,261],[9,14,1,1,262],[8,16,0,1,263],[11,8,1,0,264],[15,4,0,0,265],[15,4,0,0,266],[15,8,0,0,267],[12,0,0,0,268],[14,7,0,0,269],[14,4,0,0,270],[11,2,0,0,271],[13,2,0,0,272],[11,10,0,0,273],[10,10,0,0,274],[12,10,0,0,275],[15,7,0,0,276],[11,4,0,0,277],[9,2,0,0,278],[7,12,3,1,279],[10,8,0,0,280],[11,0,0,0,281],[7,8,0,1,282],[9,4,1,0,283],[7,4,2,1,284],[14,2,0,0,285],[12,0,0,0,286],[9,0,1,0,287],[12,2,0,0,288],[14,2,0,0,289],[10,0,0,0,290],[11,4,1,0,291],[11,2,0,0,292],[11,4,0,0,293],[11,4,0,0,294],[11,4,0,0,295],[16,2,0,0,296],[9,0,0,0,297],[10,2,0,0,298],[10,8,0,0,299],[15,2,0,0,300],[10,2,0,0,301],[10,2,0,0,302],[15,2,0,0,303],[11,0,0,0,304],[8,8,0,1,305],[15,6,0,0,306],[11,0,0,0,307],[10,8,0,0,308],[10,4,0,0,309],[8,12,0,0,310],[11,16,0,0,311],[16,10,0,0,312],[13,2,0,0,313],[16,2,0,0,314],[14,8,0,0,315],[15,6,0,0,316],[12,6,0,0,317],[12,15,0,0,318],[11,6,0,0,319],[14,2,1,0,320],[13,8,0,0,321],[9,0,1,0,322],[10,0,0,0,323],[10,10,0,0,324],[11,22,0,0,325],[13,18,0,0,326],[17,2,0,0,327],[12,0,0,0,328],[12,12,0,0,329],[12,10,0,0,330],[12,0,0,0,331],[18,0,0,0,332],[13,0,0,0,333],[14,0,0,0,334],[17,0,0,0,335],[15,2,0,0,336],[17,0,0,0,337],[18,0,0,0,338],[14,0,0,0,339],[14,0,0,0,340],[14,2,0,0,341],[13,0,0,0,342],[16,0,0,0,343],[18,0,0,0,344],[14,0,0,0,345],[12,0,0,0,346],[7,0,0,1,347],[16,0,0,0,348],[18,0,0,0,349],[9,0,1,0,350],[14,0,2,0,351],[10,0,0,0,352],[10,2,0,0,353],[12,2,0,0,354],[11,2,0,0,355],[15,2,0,0,356],[14,2,0,0,357],[12,8,0,0,358],[15,2,0,0,359],[11,8,0,0,360],[11,9,0,0,361],[12,0,0,0,362],[11,4,0,0,363],[14,2,0,0,364],[15,14,0,0,365],[12,0,0,0,366],[11,2,0,0,367],[8,2,0,0,368],[10,12,0,0,369],[8,2,2,1,370],[10,2,0,0,371],[14,4,0,0,372],[11,0,0,0,373],[17,0,0,0,374],[14,0,0,0,375],[14,0,0,0,376],[13,0,0,0,377],[17,0,0,0,378],[11,2,0,0,379],[13,0,0,0,380],[15,4,0,0,381],[11,2,0,0,382],[11,0,0,0,383],[11,0,0,0,384],[10,2,0,0,385],[15,0,0,0,386],[15,6,0,0,387],[10,8,0,0,388],[10,0,0,0,389],[14,6,0,0,390],[11,8,0,0,391],[12,0,0,0,392],[14,4,0,0,393],[14,0,0,0,394],[12,0,0,0,395],[16,6,0,0,396],[10,18,0,0,397],[11,0,0,0,398],[14,4,0,0,399],[15,4,0,0,400],[14,0,0,0,401],[11,0,0,0,402],[12,10,0,0,403],[12,4,0,0,404],[10,16,1,0,405],[10,6,1,0,406],[9,0,2,0,407],[9,11,0,0,408],[13,9,0,0,409],[13,0,0,0,410],[12,2,0,0,411],[14,0,0,0,412],[9,21,2,0,413],[11,8,0,0,414],[9,5,1,0,415],[16,10,0,0,416],[14,5,0,0,417],[13,13,0,0,418],[7,10,0,0,419],[14,10,0,0,420],[8,5,1,0,421],[10,4,0,0,422],[10,11,0,0,423],[12,0,0,0,424],[10,6,1,0,425],[10,4,0,0,426],[16,0,0,0,427],[6,0,0,1,428],[10,5,0,0,429],[10,0,0,0,430],[10,0,1,0,431],[6,0,1,1,432],[13,0,0,0,433],[10,4,0,0,434],[10,0,0,0,435],[6,4,1,1,436],[12,0,0,0,437],[10,2,0,0,438],[14,0,0,0,439],[7,0,0,1,440],[8,4,0,1,441],[12,0,0,0,442],[7,7,0,1,443],[9,4,0,0,444],[7,8,0,1,445],[11,0,0,0,446],[8,8,0,1,447],[16,6,0,0,448],[11,3,0,0,449],[15,2,0,0,450],[10,0,0,0,451],[9,4,0,0,452],[10,0,1,1,453],[9,3,1,1,454],[9,0,0,1,455],[13,0,0,0,456],[10,4,0,0,457],[13,0,0,0,458],[10,2,0,0,459],[11,1,0,0,460],[13,0,0,0,461],[13,0,0,0,462],[14,2,0,0,463],[11,6,0,0,464],[9,9,1,1,465],[10,0,0,0,466],[14,1,0,0,467],[13,1,0,0,468],[13,0,0,0,469],[13,4,0,0,470],[12,2,1,0,471],[14,0,0,0,472],[10,4,0,0,473],[10,2,0,0,474],[12,0,0,0,475],[10,2,0,1,476],[12,11,0,0,477],[7,0,3,1,478],[9,4,0,0,479],[9,0,1,0,480],[9,2,0,0,481],[9,0,0,1,482],[9,1,0,0,483],[7,6,0,1,484],[11,0,0,0,485],[9,1,1,0,486],[7,6,2,0,487],[7,6,1,1,488],[8,0,1,0,489],[9,4,1,0,490],[7,12,1,1,491],[8,2,0,0,492],[9,5,0,0,493],[8,0,0,1,494],[14,0,0,0,495],[14,2,0,0,496],[10,0,1,0,497],[14,0,0,0,498],[17,0,0,0,499],[6,12,1,1,500],[14,8,0,0,501],[10,2,1,1,502],[14,0,0,0,503],[12,0,0,0,504],[11,0,0,0,505],[11,8,1,0,506],[11,0,0,0,507],[10,0,1,1,508],[16,0,0,0,509],[15,0,0,0,510],[11,1,0,0,511],[7,9,1,1,512],[8,0,0,1,513],[7,2,0,1,514],[9,8,0,0,515],[14,0,0,0,516],[14,0,0,0,517],[8,8,1,1,518],[8,0,0,1,519],[6,6,0,1,520],[8,0,0,0,521],[8,4,0,1,522],[5,2,0,1,523],[7,2,0,1,524],[15,0,0,0,525],[13,1,0,0,526],[10,0,0,0,527],[9,5,0,1,528],[11,1,0,0,529],[7,8,0,1,530],[10,0,0,0,531],[9,2,0,1,532],[14,0,0,0,533],[11,0,0,0,534],[9,11,0,0,535],[13,8,0,0,536],[12,11,0,0,537],[11,2,0,0,538],[9,8,0,0,539],[9,5,0,0,540],[11,0,0,0,541],[10,1,0,0,542],[9,2,3,1,543],[12,2,0,0,544],[8,8,1,1,545],[13,0,0,0,546],[10,0,0,0,547],[11,2,0,0,548],[17,0,0,0,549],[12,0,0,0,550],[13,0,0,0,551],[9,2,2,0,552],[11,4,0,0,553],[10,3,0,0,554],[13,5,0,0,555],[9,4,0,0,556],[7,2,3,0,557],[8,0,0,0,558],[12,0,1,0,559],[10,0,0,0,560],[10,6,0,0,561],[11,0,0,0,562],[7,0,1,1,563],[11,2,0,0,564],[10,0,0,1,565],[9,2,1,1,566],[4,0,1,1,567],[6,4,3,1,568],[4,9,2,1,569],[7,6,0,1,570],[8,4,3,1,571],[5,8,2,1,572],[7,9,0,0,573],[8,12,1,0,574],[10,8,0,0,575],[9,8,0,0,576],[10,8,1,0,577],[8,4,1,0,578],[9,0,0,1,579],[8,4,1,0,580],[6,2,2,1,581],[6,0,0,1,582],[8,0,1,1,583],[10,0,0,0,584],[8,5,0,1,585],[8,0,0,1,586],[7,3,1,1,587],[8,0,0,1,588],[7,0,0,0,589],[7,3,2,1,590],[12,2,0,0,591],[11,0,0,0,592],[12,0,0,0,593],[18,0,0,0,594],[17,3,0,0,595],[17,0,0,0,596],[9,0,1,1,597],[10,8,0,0,598],[12,5,0,0,599],[12,4,0,0,600],[8,4,0,0,601],[11,0,0,0,602],[5,0,0,1,603],[9,2,1,0,604],[5,0,1,1,605],[18,0,0,0,606],[11,5,0,0,607],[8,2,0,0,608],[11,0,0,0,609],[8,0,3,1,610],[14,5,0,0,611],[10,4,1,0,612],[10,0,0,0,613],[12,2,0,0,614],[15,0,0,0,615],[14,2,0,0,616],[19,0,0,0,617],[16,0,0,0,618],[13,6,0,0,619],[15,4,0,0,620],[13,0,0,0,621],[8,0,0,1,622],[15,0,0,0,623],[8,0,1,1,624],[10,0,0,0,625],[7,0,0,1,626],[9,3,0,0,627],[10,8,0,0,628],[7,4,0,1,629],[15,0,0,0,630],[10,4,0,0,631],[7,4,1,1,632],[13,1,0,0,633],[16,1,0,0,634],[8,10,0,1,635],[17,4,0,0,636],[7,0,0,1,637],[14,4,0,0,638],[5,0,1,1,639],[7,0,1,1,640],[14,0,0,0,641],[6,0,0,0,642],[7,4,0,0,643],[10,4,1,0,644],[15,4,0,0,645],[11,6,0,1,646],[10,6,0,0,647],[10,4,0,0,648]],"reason_counts":{"Low 1st-term grade":48,"Past class failures":20,"Absences":8,"Studies <2 hrs/week":25,"Low parental education":15,"No higher-ed plan":16,"High alcohol use":19,"Social time > study time":24,"No single obvious flag":0},"n_train_fails":75,"n_test_fails":25};
+
+/* ============ tiny helpers ============ */
+const $  = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const pct = (x, d = 0) => (x * 100).toFixed(d) + "%";
+const rowsFor = (run, model) => DATA.runs[run].results.filter(r => r.model === model);
+
+/* ============ theme ============ */
+(function theme(){
+  const saved = localStorage.getItem("ew-theme");
+  if (saved) document.documentElement.dataset.theme = saved;
+  const sync = () => $("#themeIcon").firstElementChild.setAttribute("href",
+    document.documentElement.dataset.theme === "light" ? "#i-moon" : "#i-sun");
+  sync();
+  $("#themeBtn").addEventListener("click", () => {
+    const next = document.documentElement.dataset.theme === "light" ? "dark" : "light";
+    document.documentElement.dataset.theme = next;
+    localStorage.setItem("ew-theme", next); sync();
+  });
+})();
+
+/* ============ nav / progress / scroll-spy / mobile menu ============ */
+(function nav(){
+  const nav = $("#nav"), prog = $("#progress");
+  const onScroll = () => {
+    nav.classList.toggle("scrolled", scrollY > 24);
+    const h = document.documentElement;
+    prog.style.width = (scrollY / (h.scrollHeight - innerHeight) * 100) + "%";
+  };
+  addEventListener("scroll", onScroll, {passive: true}); onScroll();
+  const links = $$(".nav-links a");
+  const spy = new IntersectionObserver(es => es.forEach(e => {
+    if (e.isIntersecting) links.forEach(a =>
+      a.setAttribute("aria-current", a.getAttribute("href") === "#" + e.target.id ? "true" : "false"));
+  }), {rootMargin: "-35% 0px -55% 0px"});
+  $$("main section[id]").forEach(s => spy.observe(s));
+  const menu = $("#mobileMenu"), btn = $("#menuBtn");
+  btn.addEventListener("click", () => {
+    const open = menu.classList.toggle("open");
+    btn.setAttribute("aria-expanded", open);
+    btn.firstElementChild.firstElementChild.setAttribute("href", open ? "#i-x" : "#i-menu");
+  });
+  menu.addEventListener("click", e => { if (e.target.tagName === "A") btn.click(); });
+})();
+
+/* ============ reveal on scroll + count-ups ============ */
+const counters = {
+  "kpi-recall": () => Math.round(rowsFor("g1", "Random Forest")[1].recall * 100),
+  "kpi-fn":     () => rowsFor("g1", "Random Forest")[1].fn,
+  "kpi-n":      () => DATA.balance.n,
+  "kpi-wl":     () => DATA.runs.g1.watchlist_stats.flagged,
+};
+function countUp(el, target, ms = 1100){
+  if (reduced) { el.textContent = target; return; }
+  const t0 = performance.now();
+  (function tick(t){
+    const p = Math.min(1, (t - t0) / ms), e = 1 - Math.pow(1 - p, 3);
+    el.textContent = Math.round(target * e);
+    if (p < 1) requestAnimationFrame(tick);
+  })(t0);
+}
+(function reveals(){
+  const io = new IntersectionObserver(es => es.forEach(e => {
+    if (!e.isIntersecting) return;
+    e.target.classList.add("in");
+    e.target.querySelectorAll("[data-count]").forEach(n => {
+      const k = n.dataset.count; if (counters[k] && !n.dataset.done){ n.dataset.done = 1; countUp(n, counters[k]()); }
+    });
+    io.unobserve(e.target);
+  }), {threshold: 0.01, rootMargin: "0px 0px -40px 0px"});
+  $$("[data-reveal]").forEach(n => io.observe(n));
+  setTimeout(() => { // hero KPIs count up immediately
+    $$("[data-count]").forEach(n => { const k = n.dataset.count; if (counters[k] && !n.dataset.done){ n.dataset.done = 1; countUp(n, counters[k]()); } });
+  }, 350);
+})();
+/* ============ global run state (one toggle drives the whole page) ============ */
+let RUN = "g1";
+const tuned = (run, model) => rowsFor(run, model)[1];
+
+function setRun(run){
+  if (RUN === run) return;
+  RUN = run;
+  $$("#runSeg button, #wlRunSeg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.run === run ? "true" : "false"));
+  renderResults(true); renderDrivers(); renderSweep(); renderWatchlist(); renderModelCards();
+}
+
+$("#runSeg").addEventListener("click", e => { const b = e.target.closest("button"); if (b) setRun(b.dataset.run); });
+$("#wlRunSeg").addEventListener("click", e => { const b = e.target.closest("button"); if (b) setRun(b.dataset.run); });
+
+/* ============ results section ============ */
+function pop(el){ el.classList.remove("pop"); void el.offsetWidth; el.classList.add("pop"); }
+function renderResults(animate){
+  const g1 = RUN === "g1";
+  const rf = tuned(RUN, "Random Forest"), dt = tuned(RUN, "Decision Tree");
+  const wl = DATA.runs[RUN].watchlist_stats, fails = g1 ? 25 : DATA.n_test_fails;
+  const set = (id, v) => { const el = $(id); el.textContent = v; if (animate) pop(el); };
+  set("#k-recall", Math.round(rf.recall * 100) + "%");
+  set("#k-fn", rf.fn);
+  set("#k-fn-sub", `of ${fails} real failures in the test set`);
+  set("#k-recall-sub", `threshold ${rf.threshold.toFixed(2)} · DT ${Math.round(dt.recall * 100)}%`);
+  set("#k-prec", Math.round(rf.precision * 100) + "%");
+  set("#k-prec-sub", `F1 ${rf.f1.toFixed(2)} · accuracy ${Math.round(rf.accuracy * 100)}%`);
+  set("#k-wl", wl.flagged);
+  set("#k-wl-sub", `${wl.flag_share_pct}% of the ${wl.class}-student class`);
+  const fill = (m, row) => {
+    set("#" + m + "-tp", row.tp); set("#" + m + "-fn", row.fn);
+    set("#" + m + "-fp", row.fp); set("#" + m + "-tn", row.tn);
+    set("#cm-" + m + "-sub", `threshold ${row.threshold.toFixed(2)} · 163 test students`);
+  };
+  fill("rf", rf); fill("dt", dt);
+  $("#resultsTable tbody").innerHTML = DATA.runs[RUN].results.map(r => `
+    <tr><td><b>${r.model}</b></td>
+    <td>${r.threshold_label === "default 0.50" ? "default 0.50" : `<b>recall-tuned ${r.threshold.toFixed(2)}</b>`}</td>
+    <td class="hl">${r.recall.toFixed(2)}</td><td>${r.fn}</td><td>${r.tp}</td><td>${r.fp}</td>
+    <td>${r.precision.toFixed(2)}</td><td>${r.f1.toFixed(2)}</td><td>${Math.round(r.accuracy * 100)}%</td></tr>`).join("");
+  if (animate) pop($("#resultsTable tbody"));
+}
+
+/* ============ threshold explorer ============ */
+let SWEEP_MODEL = "Random Forest";
+$("#modelSeg").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  SWEEP_MODEL = b.dataset.model;
+  $$("#modelSeg button").forEach(x => x.setAttribute("aria-pressed", x === b ? "true" : "false"));
+  renderSweep();
+});
+
+function sweepPath(key){
+  const s = DATA.runs[RUN].sweep[SWEEP_MODEL];
+  const X = t => 46 + (t - 0.05) / 0.55 * (760 - 46 - 14);
+  const Y = v => 14 + (1 - v) * (300 - 14 - 34);
+  return { pts: s.map(p => [X(p.t), Y(p[key])]), X, Y };
+}
+function renderSweep(keepThr){
+  const svg = $("#sweepSvg"), NF = (a) => a.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ");
+  const grid = [0, .25, .5, .75, 1].map(v =>
+    `<line x1="46" y1="${(14 + (1 - v) * 252).toFixed(1)}" x2="746" y2="${(14 + (1 - v) * 252).toFixed(1)}" stroke="color-mix(in srgb,var(--border) 70%,transparent)" stroke-width="1"/>
+     <text x="40" y="${(18 + (1 - v) * 252).toFixed(1)}" text-anchor="end" font-size="10" fill="var(--faint)">${v}</text>`).join("");
+  const xlab = [0.05, 0.15, 0.25, 0.35, 0.45, 0.55, 0.60].map(t => {
+    const x = 46 + (t - 0.05) / 0.55 * 700;
+    return `<text x="${x.toFixed(1)}" y="292" text-anchor="middle" font-size="10" fill="var(--faint)">${t.toFixed(2)}</text>`;
+  }).join("");
+  const r = sweepPath("recall"), p = sweepPath("precision"), f = sweepPath("flag_share");
+  const tunedThr = DATA.runs[RUN].thresholds[SWEEP_MODEL];
+  const tx = r.X(tunedThr);
+  const thr = keepThr === true ? +$("#thrSlider").value : tunedThr;
+  svg.innerHTML = grid + xlab + `
+    <path d="${NF(r.pts)}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round"/>
+    <path d="${NF(p.pts)}" fill="none" stroke="var(--violet)" stroke-width="2.5" stroke-linejoin="round"/>
+    <path d="${NF(f.pts)}" fill="none" stroke="var(--accent2)" stroke-width="2" stroke-dasharray="5 4"/>
+    <line x1="${tx}" y1="14" x2="${tx}" y2="252" stroke="var(--warn)" stroke-width="1.5" stroke-dasharray="4 4"/>
+    <text x="${tx + 5}" y="26" font-size="10" fill="var(--warn)" id="tunedLabel">tuned ${tunedThr.toFixed(2)}</text>
+    <line id="thrLine" x1="${r.X(thr)}" y1="14" x2="${r.X(thr)}" y2="252" stroke="var(--text)" stroke-width="1.5" opacity=".75"/>
+    <circle id="dotR" cx="${r.X(thr)}" r="4" fill="var(--accent)"/><circle id="dotP" cx="${r.X(thr)}" r="4" fill="var(--violet)"/>`;
+  updateThr(thr, false);
+  $("#thrSlider").value = thr;
+}
+function updateThr(thr, fromSlider){
+  const s = DATA.runs[RUN].sweep[SWEEP_MODEL];
+  const p = s.reduce((a, b) => Math.abs(b.t - thr) < Math.abs(a.t - thr) ? b : a);
+  $("#thrChip").textContent = "threshold " + thr.toFixed(2);
+  $("#x-recall").textContent = Math.round(p.recall * 100) + "%";
+  $("#x-prec").textContent = Math.round(p.precision * 100) + "%";
+  $("#x-flags").textContent = Math.round(p.flag_share * 163) + " of 163";
+  $("#x-fn").textContent = Math.round((1 - p.recall) * DATA.n_train_fails) + " of " + DATA.n_train_fails;
+  $("#thrSlider").style.setProperty("--fill", ((thr - 0.05) / 0.55 * 100).toFixed(1) + "%");
+  const X = t => 46 + (t - 0.05) / 0.55 * 700;
+  const line = $("#thrLine"), dotR = $("#dotR"), dotP = $("#dotP");
+  if (line){
+    line.setAttribute("x1", X(thr)); line.setAttribute("x2", X(thr));
+    const Y = v => 14 + (1 - v) * 252;
+    dotR.setAttribute("cx", X(thr)); dotR.setAttribute("cy", Y(p.recall));
+    dotP.setAttribute("cx", X(thr)); dotP.setAttribute("cy", Y(p.precision));
+  }
+  if (fromSlider) $("#tunedLabel") && ($("#tunedLabel").textContent = "tuned " + DATA.runs[RUN].thresholds[SWEEP_MODEL].toFixed(2));
+}
+$("#thrSlider").addEventListener("input", e => updateThr(+e.target.value, true));
+
+/* ============ feature drivers ============ */
+const FEAT_LABELS = {
+  G1: "1st-term grade (G1)", failures: "Past class failures", absences: "Absences",
+  studytime: "Weekly study time", age: "Age", Medu: "Mother's education", Fedu: "Father's education",
+  goout: "Going out with friends", Walc: "Weekend alcohol", Dalc: "Workday alcohol",
+  health: "Health status", famrel: "Family relationship quality", freetime: "Free time after school",
+  traveltime: "Travel time to school", higher_yes: "Wants higher education", school_MS: "School: Mousinho (MS)",
+  school_GP: "School: Gabriel Pereira", sex_F: "Female student", address_U: "Urban address",
+  famsize_GT3: "Family larger than 3", Pstatus_T: "Parents living together", romantic_yes: "In a relationship",
+  internet_yes: "Internet at home", nursery_yes: "Attended nursery", activities_yes: "Extracurricular activities",
+  schoolsup_yes: "Extra school support", famsup_yes: "Family support", paid_yes: "Extra paid classes",
+};
+const featLabel = f => FEAT_LABELS[f] || f.replace(/_/g, " ");
+function renderDrivers(){
+  $("#impRunChip").textContent = RUN === "g1" ? "mid-term · with G1" : "pre-term · no grades";
+  const imps = DATA.runs[RUN].importances, max = imps[0].importance;
+  $("#impBars").innerHTML = imps.map(i => `
+    <div class="imp-row" title="${featLabel(i.feature)} — importance ${i.importance}">
+      <span class="lb">${featLabel(i.feature)}</span>
+      <span class="bar"><i data-w="${(i.importance / max * 100).toFixed(1)}"></i></span>
+      <span class="val">${(i.importance * 100).toFixed(1)}%</span>
+    </div>`).join("");
+  if (impSeen) $("#impBars").querySelectorAll("i").forEach(i => i.style.width = i.dataset.w + "%");
+}
+let impSeen = false;
+new IntersectionObserver((es, io) => es.forEach(e => {
+  if (!e.isIntersecting) return;
+  impSeen = true;
+  $$("#impBars .bar i").forEach(i => i.style.width = i.dataset.w + "%");
+  io.disconnect();
+}), {threshold: .3}).observe($("#impBars"));
+(function reasonChips(){
+  const rc = DATA.reason_counts;
+  $("#reasonChips").innerHTML = Object.entries(rc).map(([k, v]) =>
+    `<span class="chip" style="font-size:.78rem"><b style="color:var(--text)">${v}</b>&nbsp;${k}</span>`).join("");
+  $("#rcG1").textContent = rc["Low 1st-term grade"] + " of 52";
+})();
+
+/* ============ watchlist explorer ============ */
+const WL = { q: "", p: "all", sort: "risk", dir: -1 };
+const wlKey = { id: "Student ID", risk: "Fail risk %", g1: "G1", absences: "absences", failures: "failures", studytime: "studytime" };
+function riskColor(r, thr){ return r >= 60 ? "var(--bad)" : "var(--warn)"; }
+function renderWatchlist(){
+  const run = DATA.runs[RUN], thr = run.thresholds["Random Forest"] * 100;
+  const g1 = RUN === "g1";
+  const th = document.querySelector('#wlTable th[data-s="g1"]');
+  th.style.display = g1 ? "" : "none";
+  let rows = run.watchlist.map(r => ({ ...r, risk: r["Fail risk %"], id: r["Student ID"], why: r["Why flagged"], pr: r["Priority"] }));
+  if (WL.q){
+    const q = WL.q.toLowerCase();
+    rows = rows.filter(r => String(r.id).includes(q) || r.why.toLowerCase().includes(q) ||
+      String(r.G1 ?? "").includes(q) || String(r.absences).includes(q));
+  }
+  if (WL.p !== "all") rows = rows.filter(r => r.pr.startsWith(WL.p));
+  const k = wlKey[WL.sort] || "Fail risk %";
+  rows.sort((a, b) => (a[k] > b[k] ? 1 : a[k] < b[k] ? -1 : 0) * WL.dir);
+  $("#wlCount").textContent = rows.length;
+  const st = run.watchlist_stats;
+  $("#wlShare").textContent = st.flag_share_pct + "% of the " + st.class + "-student class";
+  $("#wlCaught").textContent = `caught ${st.caught} of ${st.real_fails} real failures (${st.caught_pct}%)`;
+  $("#wlBody").innerHTML = rows.length ? rows.map(r => `
+    <tr>
+      <td class="mono">#${r.id}</td>
+      <td><span class="chip ${r.pr.startsWith("HIGH") ? "high" : "med"}">${r.pr.startsWith("HIGH") ? "HIGH · this week" : "MEDIUM · monitor"}</span></td>
+      <td class="hl" style="white-space:nowrap"><span class="riskbar"><i style="width:${r.risk}%;background:${riskColor(r.risk, thr)}"></i></span><b>${r.risk}%</b></td>
+      <td style="white-space:normal"><span class="why">${r.why.split(";").map(s => `<span class="chip">${s.trim()}</span>`).join("")}</span></td>
+      <td data-col="g1" ${g1 ? "" : 'style="display:none"'}>${r.G1 ?? "—"}</td>
+      <td>${r.absences}</td><td>${r.failures}</td><td>${r.studytime}</td>
+    </tr>`).join("")
+    : "";
+  $("#wlEmpty").hidden = rows.length > 0;
+}
+$("#wlSearch").addEventListener("input", e => { WL.q = e.target.value.trim(); renderWatchlist(); });
+$("#wlSeg").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  WL.p = b.dataset.p;
+  $$("#wlSeg button").forEach(x => x.setAttribute("aria-pressed", x === b ? "true" : "false"));
+  renderWatchlist();
+});
+$$('#wlTable th.sortable').forEach(th => th.addEventListener("click", () => {
+  const key = th.dataset.s;
+  if (WL.sort === key) WL.dir *= -1; else { WL.sort = key; WL.dir = key === "risk" ? -1 : 1; }
+  renderWatchlist();
+}));
+$("#csvBtn").addEventListener("click", () => {
+  const run = DATA.runs[RUN];
+  const cols = RUN === "g1"
+    ? ["Student ID", "Priority", "Fail risk %", "Why flagged", "G1", "absences", "failures", "studytime"]
+    : ["Student ID", "Priority", "Fail risk %", "Why flagged", "absences", "failures", "studytime"];
+  const esc = v => '"' + String(v).replace(/"/g, '""') + '"';
+  const csv = [cols.join(",")].concat(run.watchlist.map(r => cols.map(c => esc(r[c] ?? "")).join(","))).join("\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([csv], {type: "text/csv"}));
+  a.download = RUN === "g1" ? "mid_term_watchlist.csv" : "pre_term_watchlist.csv";
+  a.click(); URL.revokeObjectURL(a.href);
+});
+
+/* ============ risk simulator (distilled model, runs locally) ============ */
+const SUR = DATA.meta.surrogate;
+const SIM_FIXED = { age: 16, traveltime: 1, famrel: 4, freetime: 3, health: 3,
+  sex_F: 1, famsize_GT3: 1, address_U: 1, Pstatus_T: 1, schoolsup_yes: 0, famsup_yes: 0,
+  paid_yes: 0, activities_yes: 1, nursery_yes: 1, internet_yes: 1, romantic_yes: 0 };
+function simVector(){
+  return { ...SIM_FIXED,
+    G1: +$("#s-g1").value, failures: +$("#s-failures").value, absences: +$("#s-absences").value,
+    studytime: +$("#s-studytime").value, higher_yes: $("#s-higher").value === "yes" ? 1 : 0,
+    Medu: +$("#s-medu").value, Fedu: +$("#s-fedu").value,
+    school_GP: $("#s-school").value === "GP" ? 1 : 0,
+    goout: +$("#s-goout").value, Dalc: +$("#s-dalc").value, Walc: +$("#s-walc").value };
+}
+const PATH_NAMES = { G1: "G1", failures: "past failures", school_GP: "school GP", absences: "absences",
+  Medu: "mother's edu", Fedu: "father's edu", studytime: "study time", goout: "going out", Walc: "weekend alcohol", Dalc: "workday alcohol" };
+function walkTree(node, v, path){
+  if (node.leaf) return { risk: Math.round(node.value * 100), path };
+  const x = v[node.f], nm = PATH_NAMES[node.f] || node.f;
+  const wentLeft = x <= node.thresh;
+  path.push(`${nm} ${wentLeft ? "≤" : ">"} ${node.thresh}`);
+  return walkTree(wentLeft ? node.left : node.right, v, path);
+}
+const simFlags = v => {
+  const out = [];
+  if (v.G1 < 10) out.push(`Low 1st-term grade (${v.G1}/20)`);
+  if (v.failures >= 1) out.push(`${v.failures} past class failure(s)`);
+  if (v.absences >= 6) out.push(`${v.absences} absences`);
+  if (v.studytime === 1) out.push("Studies <2 hrs/week");
+  if (v.Medu <= 1 && v.Fedu <= 1) out.push("Low parental education");
+  if (!v.higher_yes) out.push("No plan for higher education");
+  if (v.Dalc >= 3 || v.Walc >= 4) out.push("High alcohol use");
+  if (v.goout >= 4 && v.studytime <= 2) out.push("High social time, low study time");
+  return out;
+};
+function runSim(){
+  const v = simVector();
+  const { risk, path } = walkTree(SUR.tree, v, []);
+  $("#simRisk").textContent = risk;
+  $("#gaugeArc").style.strokeDashoffset = 264 * (1 - risk / 100);
+  const tier = risk >= 60 ? ["HIGH — meet this week", "chip high"] : risk >= 41 ? ["MEDIUM — check in", "chip med"] : ["LOW — healthy signals", "chip ok"];
+  const t = $("#simTier"); t.textContent = tier[0]; t.className = tier[1] + " sim-tier-chip";
+  $("#simTier").style.cssText = "margin:6px 0 16px";
+  $("#simFlags").innerHTML = simFlags(v).map(s => `<span class="chip med">${s}</span>`).join("")
+    || `<span class="chip ok">No single obvious flag — review holistically</span>`;
+  $("#simPath").innerHTML = "<b>model path:</b> " + path.join(" → ") + ` → leaf risk <b>${risk}%</b>`;
+  $$("#simulator input[type=range]").forEach(r => {
+    r.style.setProperty("--fill", ((r.value - r.min) / (r.max - r.min) * 100) + "%");
+    $("#o-" + r.id.slice(2)).textContent = r.value;
+  });
+}
+$("#simulator").addEventListener("input", runSim);
+$("#simulator").addEventListener("change", runSim);
+
+/* ============ static-ish charts from data ============ */
+(function donut(){
+  const b = DATA.balance, frac = b.fail / b.n;
+  $("#donutPct").textContent = b.fail_pct + "%";
+  $("#balFail").textContent = b.fail; $("#balN").textContent = b.n;
+  $("#balPass").textContent = `${b.pass} passed (${(100 - b.fail_pct).toFixed(1)}%) · target recall is set so failing students are almost never missed`;
+  setTimeout(() => $("#donutFail").style.strokeDashoffset = 339.3 * (1 - frac), 600);
+})();
+(function hist(){
+  const h = DATA.runs.g1.risk_hist, totals = h.pass.map((p, i) => p + h.fail[i]);
+  const max = Math.max(...totals), N = h.labels.length;
+  $("#histBars").innerHTML = h.labels.map((l, i) => `
+    <div class="col" data-i="${i}" style="height:${Math.max(2, totals[i] / max * 100)}%" tabindex="0">
+      <div class="seg-f" style="height:${h.fail[i] / totals[i] * 100 || 0}%"></div>
+      <div class="seg-p" style="height:${h.pass[i] / totals[i] * 100 || 0}%"></div>
+    </div>`).join("");
+  $("#histX").innerHTML = h.labels.map((l, i) => `<span>${i % 4 === 0 ? l.split("-")[0] : ""}</span>`).join("");
+  const read = $("#histRead");
+  const show = i => {
+    const l = h.labels[i];
+    read.innerHTML = `Predicted risk <b>${l}%</b>: <b style="color:var(--bad)">${h.fail[i]} failed</b> · <b style="color:var(--accent2)">${h.pass[i]} passed</b> · ${totals[i]} student${totals[i] === 1 ? "" : "s"}`;
+  };
+  $("#histBars").addEventListener("mouseover", e => { const c = e.target.closest(".col"); if (c) show(+c.dataset.i); });
+  $("#histBars").addEventListener("focusin", e => { const c = e.target.closest(".col"); if (c) show(+c.dataset.i); });
+})();
+(function pairbars(){
+  const g = tuned("g1", "Random Forest"), n = tuned("nog1", "Random Forest");
+  const gs = DATA.runs.g1.watchlist_stats, ns = DATA.runs.nog1.watchlist_stats;
+  $("#pb-recall").textContent = `${Math.round(g.recall * 100)}% vs ${Math.round(n.recall * 100)}%`;
+  $("#pb-prec").textContent = `${Math.round(g.precision * 100)}% vs ${Math.round(n.precision * 100)}%`;
+  $("#pb-flag").textContent = `${gs.flag_share_pct}% vs ${ns.flag_share_pct}%`;
+  $("#pb-fn").textContent = `${g.fn} vs ${n.fn} missed`;
+  setTimeout(() => $$(".pair .bar i").forEach(i => i.style.width = i.dataset.w + "%"), 700);
+})();
+
+/* ============ model cards ============ */
+function renderModelCards(){
+  const cv = DATA.runs[RUN].cv_best;
+  $("#dt-cv").textContent = cv["Decision Tree"].recall.toFixed(3);
+  $("#dt-depth").textContent = cv["Decision Tree"].params.max_depth;
+  $("#dt-leaf").textContent = cv["Decision Tree"].params.min_samples_leaf;
+  $("#dt-test").textContent = tuned(RUN, "Decision Tree").recall.toFixed(2);
+  $("#rf-cv").textContent = cv["Random Forest"].recall.toFixed(3);
+  $("#rf-est").textContent = cv["Random Forest"].params.n_estimators;
+  $("#rf-depth").textContent = cv["Random Forest"].params.max_depth;
+  $("#rf-test").textContent = tuned(RUN, "Random Forest").recall.toFixed(2);
+  $("#rf-thr").textContent = DATA.runs[RUN].thresholds["Random Forest"].toFixed(2);
+  $("#dt-thr").textContent = DATA.runs[RUN].thresholds["Decision Tree"].toFixed(2);
+  const g = tuned("g1", "Random Forest"), n = tuned("nog1", "Random Forest");
+  $("#lk-g1").textContent = Math.round(g.recall * 100) + "%";
+  $("#lk-nog1").textContent = Math.round(n.recall * 100) + "%";
+  $("#lk-nog1-wl").textContent = DATA.runs.nog1.watchlist_stats.flag_share_pct + "% of class";
+  $("#lk-cost").textContent = `${Math.round((g.recall - n.recall) * 100)} pts recall, +${DATA.runs.nog1.watchlist_stats.flag_share_pct - DATA.runs.g1.watchlist_stats.flag_share_pct} pts flags`;
+}
+
+/* ============ hero 3D — the real 649-student scatter ============ */
+(function hero3d(){
+  const cv = $("#hero3d"), tip = $("#heroTip"), ctx = cv.getContext("2d");
+  let W = 0, H = 0, visible = true, running = false, raf = 0;
+  const jitter = id => (((id * 2654435761) % 997) / 997 - 0.5) * 0.14;
+  const pts = DATA.cloud.map(([g1, ab, fl, fail, id]) => ({
+    x: (g1 / 20) * 2 - 1 + jitter(id), y: (fl / 3) * 2 - 1 + jitter(id + 3),
+    z: (Math.min(ab, 40) / 40) * 2 - 1 + jitter(id + 7), fail: !!fail, id,
+    g1, ab, fl,
+  }));
+  // mean-center so the cloud orbits the viewport centre (raw maps skew: most students have 0 failures, few absences)
+  ["x", "y", "z"].forEach(k => {
+    const m = pts.reduce((s, p) => s + p[k], 0) / pts.length;
+    pts.forEach(p => p[k] -= m);
+  });
+  const edges = [];
+  for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++){
+    const dx = pts[i].x - pts[j].x, dy = pts[i].y - pts[j].y, dz = pts[i].z - pts[j].z;
+    const d2 = dx * dx + dy * dy + dz * dz;
+    if (d2 < 0.016) edges.push([i, j, d2]);
+    if (edges.length > 2400) break;
+  }
+  let rx = -0.18, ry = 0.6, vy = 0, vx = 0, dragging = false, lastX = 0, lastY = 0, mouse = null;
+  function resize(){
+    const dpr = Math.min(devicePixelRatio || 1, 2);
+    W = cv.clientWidth; H = cv.clientHeight;
+    cv.width = W * dpr; cv.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  function frame(){
+    raf = 0;
+    if (!visible || document.hidden){ running = false; return; }
+    const light = document.documentElement.dataset.theme === "light";
+    const passC = light ? "#0891b2" : "#69e4ff", failC = light ? "#dc2626" : "#ff7d7d", edgeC = light ? "16,22,43" : "159,175,255";
+    ctx.clearRect(0, 0, W, H);
+    if (!dragging){
+      ry += 0.0028 + vy; rx += vx;
+      vy *= 0.95; vx *= 0.95;
+      rx = Math.max(-0.9, Math.min(0.9, rx));
+    }
+    const cy = Math.cos(ry), sy = Math.sin(ry), cx = Math.cos(rx), sx = Math.sin(rx);
+    const S = Math.min(W, H) * 0.38, CX = W * (W > 900 ? 0.58 : 0.5), CY = H * 0.47;
+    const proj = pts.map(p => {
+      const x1 = p.x * cy + p.z * sy, z1 = -p.x * sy + p.z * cy;
+      const y1 = p.y * cx - z1 * sx, z2 = p.y * sx + z1 * cx;
+      const pr = 3.4 / (3.4 + z2);
+      return { sx: CX + x1 * pr * S, sy: CY + y1 * pr * S, pr, z: z2 };
+    });
+    ctx.lineWidth = 1;
+    for (const [a, b, d2] of edges){
+      const A = proj[a], B = proj[b];
+      const depth = ((3.4 - A.z) / 6.8 + (3.4 - B.z) / 6.8) / 2;
+      const al = Math.max(0.02, 0.16 * (0.3 + depth));
+      ctx.strokeStyle = `rgba(${edgeC},${al.toFixed(3)})`;
+      ctx.beginPath(); ctx.moveTo(A.sx, A.sy); ctx.lineTo(B.sx, B.sy); ctx.stroke();
+    }
+    let hover = null, hd = 14;
+    pts.forEach((p, i) => {
+      const q = proj[i];
+      if (q.pr < 0.35) return;
+      const a = Math.max(0.18, Math.min(1, (3.4 - q.z) / 6.8 + 0.25));
+      const r = q.pr * (p.fail ? 3.2 : 2.3);
+      if (p.fail){
+        const g = ctx.createRadialGradient(q.sx, q.sy, 0, q.sx, q.sy, r * 4);
+        g.addColorStop(0, p.fail ? "rgba(255,125,125," + (a * 0.35).toFixed(2) + ")" : "rgba(105,228,255," + (a * 0.3).toFixed(2) + ")");
+        g.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(q.sx, q.sy, r * 4, 0, 6.283); ctx.fill();
+      }
+      ctx.globalAlpha = a;
+      ctx.fillStyle = p.fail ? failC : passC;
+      ctx.beginPath(); ctx.arc(q.sx, q.sy, r, 0, 6.283); ctx.fill();
+      ctx.globalAlpha = 1;
+      if (mouse && !dragging){
+        const dx = mouse.x - q.sx, dy = mouse.y - q.sy, d = Math.hypot(dx, dy);
+        if (d < hd){ hd = d; hover = { p, x: q.sx, y: q.sy }; }
+      }
+    });
+    if (hover){
+      tip.style.opacity = 1;
+      tip.style.left = Math.min(W - 230, hover.x + 14) + "px";
+      tip.style.top = (hover.y - 10) + "px";
+      tip.innerHTML = `<b style="color:${hover.p.fail ? failC : passC}">Student #${hover.p.id}</b><br>G1 ${hover.p.g1}/20 · ${hover.p.ab} absences · ${hover.p.fl} past fail${hover.p.fl === 1 ? "" : "s"}<br><b>${hover.p.fail ? "FAILED the course" : "PASSED"}</b>`;
+    } else tip.style.opacity = 0;
+    raf = requestAnimationFrame(frame);
+  }
+  function start(){ if (!running && visible && !document.hidden){ running = true; raf = requestAnimationFrame(frame); } }
+  function stop(){ running = false; if (raf) cancelAnimationFrame(raf); raf = 0; }
+  cv.addEventListener("pointerdown", e => { dragging = true; lastX = e.clientX; lastY = e.clientY; cv.setPointerCapture(e.pointerId); tip.style.opacity = 0; });
+  cv.addEventListener("pointermove", e => {
+    const r = cv.getBoundingClientRect(); mouse = { x: e.clientX - r.left, y: e.clientY - r.top };
+    if (dragging){ vy = (e.clientX - lastX) * 0.006; vx = -(e.clientY - lastY) * 0.004; ry += vy; rx += vx; lastX = e.clientX; lastY = e.clientY; rx = Math.max(-0.9, Math.min(0.9, rx)); }
+  });
+  addEventListener("pointerup", () => dragging = false);
+  cv.addEventListener("pointerleave", () => { mouse = null; });
+  addEventListener("resize", resize);
+  new IntersectionObserver(es => es.forEach(e => { visible = e.isIntersecting; visible ? start() : stop(); })).observe(cv);
+  document.addEventListener("visibilitychange", () => document.hidden ? stop() : start());
+  resize(); start();
+})();
+
+/* ============ hero ticker ============ */
+(function ticker(){
+  const g = tuned("g1", "Random Forest"), wl = DATA.runs.g1.watchlist_stats, n = tuned("nog1", "Random Forest");
+  const lines = [
+    `Random Forest tuned @ ${g.threshold.toFixed(2)} — recall ${Math.round(g.recall * 100)}% on the held-out test set`,
+    `${wl.caught} of ${wl.real_fails} real failures caught — only ${g.fn} missed`,
+    `watchlist: ${wl.flagged} students (${wl.flag_share_pct}% of the class)`,
+    `no-grades run: recall ${Math.round(n.recall * 100)}% but ${DATA.runs.nog1.watchlist_stats.flag_share_pct}% of the class flagged`,
+    `top driver: 1st-term grade — ${(DATA.runs.g1.importances[0].importance * 100).toFixed(0)}% of model importance`,
+  ];
+  const el = $("#tickerText"); let i = 0;
+  if (reduced){ el.textContent = lines[0]; return; }
+  el.textContent = lines[0];
+  setInterval(() => {
+    el.style.opacity = 0;
+    setTimeout(() => { i = (i + 1) % lines.length; el.textContent = lines[i]; el.style.opacity = 1; }, 400);
+  }, 4200);
+})();
+
+/* ============ carousels & snap galleries ============ */
+function snapGallery(trackId, prevId, nextId){
+  const track = $(trackId); if (!track) return;
+  const step = () => (track.firstElementChild.getBoundingClientRect().width + 16);
+  $(prevId).addEventListener("click", () => track.scrollBy({ left: -step(), behavior: "smooth" }));
+  $(nextId).addEventListener("click", () => track.scrollBy({ left: step(), behavior: "smooth" }));
+}
+snapGallery("#pipeTrack", "#pipePrev", "#pipeNext");
+
+(function modelCarousel(){
+  const track = $("#carTrack"), dots = $("#carDots");
+  const cards = [...track.children];
+  dots.innerHTML = cards.map((_, i) => `<button aria-label="Go to card ${i + 1}"${i === 0 ? ' aria-current="true"' : ""}></button>`).join("");
+  const dotEls = [...dots.children];
+  const idx = () => Math.round(track.scrollLeft / (cards[0].getBoundingClientRect().width + 16));
+  const go = i => track.scrollTo({ left: i * (cards[0].getBoundingClientRect().width + 16), behavior: "smooth" });
+  let ticking = false;
+  track.addEventListener("scroll", () => {
+    if (ticking) return; ticking = true;
+    requestAnimationFrame(() => {
+      const i = Math.min(cards.length - 1, Math.max(0, idx()));
+      dotEls.forEach((d, j) => d.setAttribute("aria-current", j === i ? "true" : "false"));
+      ticking = false;
+    });
+  }, { passive: true });
+  $("#carPrev").addEventListener("click", () => go(Math.max(0, idx() - 1)));
+  $("#carNext").addEventListener("click", () => go(Math.min(cards.length - 1, idx() + 1)));
+  dotEls.forEach((d, i) => d.addEventListener("click", () => go(i)));
+  if (!reduced){
+    let paused = false, timer;
+    const tick = () => { if (!paused){ const i = idx(); go(i >= cards.length - 1 ? 0 : i + 1); } timer = setTimeout(tick, 5000); };
+    track.addEventListener("pointerenter", () => paused = true);
+    track.addEventListener("pointerleave", () => paused = false);
+    track.addEventListener("touchstart", () => paused = true, { passive: true });
+    timer = setTimeout(tick, 5000);
+  }
+})();
+
+/* ============ tilt on cards (subtle 3D) ============ */
+if (!reduced && matchMedia("(hover:hover)").matches){
+  $$(".mcard, .kpi").forEach(card => {
+    card.addEventListener("pointermove", e => {
+      const r = card.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5;
+      card.style.transform = `perspective(900px) rotateX(${(-y * 4).toFixed(2)}deg) rotateY(${(x * 5).toFixed(2)}deg) translateY(-2px)`;
+    });
+    card.addEventListener("pointerleave", () => card.style.transform = "");
+  });
+}
+
+/* ============ boot ============ */
+renderResults(false); renderDrivers(); renderSweep(); renderWatchlist(); renderModelCards(); runSim();
+$("#trainFails").textContent = DATA.n_train_fails;
+$("#x-train-n").textContent = DATA.n_train_fails;
+</script>
+</body>
+</html>
+
+
+
+</body>
+</html>
