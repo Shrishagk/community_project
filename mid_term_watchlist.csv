@@ -1,0 +1,53 @@
+Student ID,Priority,Fail risk %,Why flagged,G1,absences,failures,studytime
+605,HIGH - meet this week,81,"Low 1st-term grade (5/20); 1 past class failure(s); Studies <2 hrs/week; Low parental education; No plan for higher education; High social time, low study time",5,0,1,1
+583,HIGH - meet this week,81,"Low 1st-term grade (8/20); 1 past class failure(s); Studies <2 hrs/week; No plan for higher education; High social time, low study time",8,0,1,1
+512,HIGH - meet this week,80,Low 1st-term grade (7/20); 1 past class failure(s); 9 absences; Low parental education,7,9,1,2
+574,HIGH - meet this week,80,Low 1st-term grade (8/20); 1 past class failure(s); 12 absences; Studies <2 hrs/week; Low parental education; No plan for higher education; High alcohol use,8,12,1,1
+557,HIGH - meet this week,79,"Low 1st-term grade (7/20); 3 past class failure(s); High social time, low study time",7,2,3,2
+639,HIGH - meet this week,78,Low 1st-term grade (5/20); 1 past class failure(s); Studies <2 hrs/week; Low parental education,5,0,1,1
+571,HIGH - meet this week,77,Low 1st-term grade (8/20); 3 past class failure(s); Studies <2 hrs/week; No plan for higher education,8,4,3,1
+587,HIGH - meet this week,76,Low 1st-term grade (7/20); 1 past class failure(s),7,3,1,2
+578,HIGH - meet this week,74,"Low 1st-term grade (8/20); 1 past class failure(s); High social time, low study time",8,4,1,2
+552,HIGH - meet this week,74,Low 1st-term grade (9/20); 2 past class failure(s); Low parental education; No plan for higher education; High alcohol use,9,2,2,2
+488,HIGH - meet this week,70,Low 1st-term grade (7/20); 1 past class failure(s); 6 absences; Low parental education; No plan for higher education,7,6,1,3
+481,HIGH - meet this week,70,Low 1st-term grade (9/20); Studies <2 hrs/week; No plan for higher education,9,2,0,1
+629,HIGH - meet this week,69,"Low 1st-term grade (7/20); Studies <2 hrs/week; High social time, low study time",7,4,0,1
+440,HIGH - meet this week,69,"Low 1st-term grade (7/20); Low parental education; High alcohol use; High social time, low study time",7,0,0,2
+256,HIGH - meet this week,68,Low 1st-term grade (7/20); 1 past class failure(s); 26 absences; Studies <2 hrs/week; No plan for higher education,7,26,1,1
+178,HIGH - meet this week,66,"Low 1st-term grade (8/20); Low parental education; No plan for higher education; High alcohol use; High social time, low study time",8,0,0,2
+173,HIGH - meet this week,65,"Low 1st-term grade (9/20); 2 past class failure(s); Studies <2 hrs/week; High alcohol use; High social time, low study time",9,0,2,1
+519,HIGH - meet this week,65,Low 1st-term grade (8/20),8,0,0,2
+421,HIGH - meet this week,65,Low 1st-term grade (8/20); 1 past class failure(s); Studies <2 hrs/week; Low parental education,8,5,1,1
+622,HIGH - meet this week,64,"Low 1st-term grade (8/20); High alcohol use; High social time, low study time",8,0,0,2
+441,HIGH - meet this week,63,Low 1st-term grade (8/20); Low parental education; High alcohol use,8,4,0,2
+523,HIGH - meet this week,63,Low 1st-term grade (5/20); No plan for higher education; High alcohol use,5,2,0,4
+627,HIGH - meet this week,63,Low 1st-term grade (9/20); Studies <2 hrs/week; No plan for higher education,9,3,0,1
+528,HIGH - meet this week,63,Low 1st-term grade (9/20); Studies <2 hrs/week,9,5,0,1
+540,HIGH - meet this week,63,Low 1st-term grade (9/20); Studies <2 hrs/week,9,5,0,1
+521,HIGH - meet this week,61,Low 1st-term grade (8/20),8,0,0,2
+589,HIGH - meet this week,61,Low 1st-term grade (7/20); Studies <2 hrs/week,7,0,0,1
+184,HIGH - meet this week,61,"Low 1st-term grade (9/20); 1 past class failure(s); Studies <2 hrs/week; High alcohol use; High social time, low study time",9,4,1,1
+305,HIGH - meet this week,61,"Low 1st-term grade (8/20); 8 absences; Studies <2 hrs/week; No plan for higher education; High social time, low study time",8,8,0,1
+419,HIGH - meet this week,61,"Low 1st-term grade (7/20); 10 absences; Studies <2 hrs/week; High alcohol use; High social time, low study time",7,10,0,1
+515,MEDIUM - check in / monitor,59,"Low 1st-term grade (9/20); 8 absences; Low parental education; High alcohol use; High social time, low study time",9,8,0,2
+585,MEDIUM - check in / monitor,59,Low 1st-term grade (8/20); No plan for higher education,8,5,0,3
+322,MEDIUM - check in / monitor,59,Low 1st-term grade (9/20); 1 past class failure(s); No plan for higher education; High alcohol use,9,0,1,2
+522,MEDIUM - check in / monitor,58,"Low 1st-term grade (8/20); High social time, low study time",8,4,0,2
+444,MEDIUM - check in / monitor,58,"Low 1st-term grade (9/20); High social time, low study time",9,4,0,2
+180,MEDIUM - check in / monitor,57,"Low 1st-term grade (9/20); No plan for higher education; High alcohol use; High social time, low study time",9,0,0,2
+176,MEDIUM - check in / monitor,57,"Low 1st-term grade (8/20); Studies <2 hrs/week; High alcohol use; High social time, low study time",8,2,0,1
+493,MEDIUM - check in / monitor,57,"Low 1st-term grade (9/20); Studies <2 hrs/week; Low parental education; High alcohol use; High social time, low study time",9,5,0,1
+642,MEDIUM - check in / monitor,57,"Low 1st-term grade (6/20); High social time, low study time",6,0,0,2
+251,MEDIUM - check in / monitor,55,Low 1st-term grade (9/20); Studies <2 hrs/week,9,4,0,1
+219,MEDIUM - check in / monitor,53,Low 1st-term grade (8/20); 1 past class failure(s); 14 absences; High alcohol use,8,14,1,3
+626,MEDIUM - check in / monitor,52,Low 1st-term grade (7/20); High alcohol use,7,0,0,2
+136,MEDIUM - check in / monitor,52,Low 1st-term grade (9/20); Studies <2 hrs/week,9,4,0,1
+168,MEDIUM - check in / monitor,50,"Low 1st-term grade (7/20); High social time, low study time",7,0,0,2
+368,MEDIUM - check in / monitor,49,"Low 1st-term grade (8/20); Studies <2 hrs/week; High alcohol use; High social time, low study time",8,2,0,1
+1,MEDIUM - check in / monitor,48,Low 1st-term grade (9/20); Low parental education,9,2,0,2
+278,MEDIUM - check in / monitor,48,Low 1st-term grade (9/20); Studies <2 hrs/week,9,2,0,1
+554,MEDIUM - check in / monitor,47,"Studies <2 hrs/week; Low parental education; No plan for higher education; High social time, low study time",10,3,0,1
+90,MEDIUM - check in / monitor,44,Low 1st-term grade (9/20),9,2,0,3
+471,MEDIUM - check in / monitor,43,"1 past class failure(s); High social time, low study time",12,2,1,2
+559,MEDIUM - check in / monitor,42,1 past class failure(s); Studies <2 hrs/week; Low parental education,12,0,1,1
+172,MEDIUM - check in / monitor,42,"1 past class failure(s); High alcohol use; High social time, low study time",10,0,1,2

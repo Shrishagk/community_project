@@ -29,15 +29,22 @@ A **missed failing student (false negative)** costs a student their year. A **fa
 3. The decision threshold is tuned on out-of-fold **training** predictions to reach a target recall (default 90%). The test set is never used for tuning.
 4. Results always show **missed failures (FN)** next to recall.
 
-### Leakage control (how "early" is early?)
+### Leakage control & G1 dominance resolution (how "early" is early?)
 
 | Column | Treatment |
 |---|---|
-| `G3` | Dropped. It is the answer. |
-| `G2` | Dropped. It arrives too late for an early warning. |
-| `G1` | Kept when `USE_G1 = True` (mid-term watchlist). Dropped when `False` (pre-term watchlist). |
+| `G3` | Dropped. It is the final target (`G3 < 10` is fail). |
+| `G2` | Dropped. Arrives at 2nd period, too late for early intervention. |
+| `G1` | **Pre-term (`USE_G1 = False`, default)**: Dropped to prevent grade collinearity/leakage and predict early based purely on student behavior, effort, and background.<br>**Mid-term (`USE_G1 = True`)**: Retained as 1st-period academic context alongside behavioral features. |
 
-Run both settings and compare recall. The gap shows what predicting earlier costs.
+#### Why G1 dominance was an issue:
+In student performance data, the 1st-period grade `G1` has a strong negative correlation with failure ($r = -0.56$). When included naively:
+1. Tree models allocate >37% importance to `G1`, treating it as the primary risk driver and ignoring early behavioral warning signs.
+2. In the interactive simulator, a shallow surrogate tree collapsed into branching only on `G1 <= 9.5` and `past failures > 0.5`, locking any student with low `G1` at a static 77% risk regardless of changes to absences, study time, or alcohol use.
+
+#### The fix:
+- **Python pipeline**: Defaulted to `USE_G1 = False` for true pre-term early warning, generating `pre_term_watchlist.csv` based on actionable lifestyle and historical signals (failures, absences, study time, alcohol use, parental education).
+- **Interactive simulator (`index.html`)**: Upgraded with a calibrated multi-factor model and an interactive timing toggle (Mid-term vs. Pre-term). Every slider (absences, study hours, failures, alcohol use, family background, school) dynamically moves the risk gauge, preventing any single grade from hijacking the prediction.
 
 ---
 

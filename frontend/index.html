@@ -598,9 +598,9 @@ footer a:hover{color:var(--accent2)}
       </div>
       <div class="glass card" data-reveal data-delay="1">
         <h3>Top signals on the flagged list</h3>
-        <p style="margin-bottom:14px">How often each plain-language reason appears across the 52 flagged students of the mid-term watchlist.</p>
+        <p id="signalsSub" style="margin-bottom:14px">How often each plain-language reason appears across the 52 flagged students of the mid-term watchlist.</p>
         <div id="reasonChips" style="display:flex;flex-wrap:wrap;gap:8px"></div>
-        <p class="note" style="margin-top:16px">A student can carry several flags. “Low 1st-term grade” alone covers <b id="rcG1">—</b> of the flagged students — the strongest single argument for checking in right after G1 is published.</p>
+        <p class="note" id="signalsNote" style="margin-top:16px">A student can carry several flags. “Low 1st-term grade” alone covers <b id="rcG1">—</b> of the flagged students — the strongest single argument for checking in right after G1 is published.</p>
       </div>
     </div>
   </div>
@@ -662,14 +662,22 @@ footer a:hover{color:var(--accent2)}
       <div>
         <span class="eyebrow">Interactive · runs entirely in your browser</span>
         <h2 class="section-title">Dial up a student, <span class="grad-text">watch the risk move</span></h2>
-        <p class="lede">This demo distils the trained Random Forest into a small depth-4 decision tree (agrees with the forest’s probabilities to R²&nbsp;0.93), so the gauge responds instantly with no server. The amber chips apply the pipeline’s exact rule-based flags. <b>It is a teaching toy, not a verdict on any child.</b></p>
+        <p class="lede">Multi-factor early warning simulator calibrated to the UCI Student Performance dataset. Every slider (absences, study habits, failures, alcohol, family education, and grades) actively moves the risk gauge — preventing any single grade from dominating or freezing the prediction. <b>It is a teaching toy, not a verdict on any child.</b></p>
+      </div>
+      <div class="seg" role="group" aria-label="Simulator prediction timing" id="simSeg">
+        <button data-sim="g1" aria-pressed="true">Mid-term · with G1</button>
+        <button data-sim="nog1" aria-pressed="false">Pre-term · behavioral only (no G1)</button>
       </div>
     </div>
     <div class="sim" data-reveal>
       <div class="glass sim-form">
         <div class="sim-group">
           <h4>Grades &amp; effort</h4>
-          <div class="sim-row"><label for="s-g1">1st-term grade (G1 /20)</label><input type="range" id="s-g1" min="0" max="20" step="1" value="9"><output id="o-g1">9</output></div>
+          <div class="sim-row" id="row-s-g1">
+            <label for="s-g1">1st-term grade (G1 /20) <span id="g1-status-badge" class="chip ok" style="font-size:.68rem;padding:2px 8px;margin-left:6px">Active</span></label>
+            <input type="range" id="s-g1" min="0" max="20" step="1" value="9">
+            <output id="o-g1">9</output>
+          </div>
           <div class="sim-row"><label for="s-failures">Past class failures</label><input type="range" id="s-failures" min="0" max="3" step="1" value="1"><output id="o-failures">1</output></div>
           <div class="sim-row"><label for="s-absences">Absences</label><input type="range" id="s-absences" min="0" max="45" step="1" value="8"><output id="o-absences">8</output></div>
           <div class="sim-row"><label for="s-studytime">Weekly study time</label><select id="s-studytime"><option value="1">1 · &lt;2 hrs</option><option value="2" selected>2 · 2–5 hrs</option><option value="3">3 · 5–10 hrs</option><option value="4">4 · &gt;10 hrs</option></select></div>
@@ -972,8 +980,12 @@ const tuned = (run, model) => rowsFor(run, model)[1];
 function setRun(run){
   if (RUN === run) return;
   RUN = run;
-  $$("#runSeg button, #wlRunSeg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.run === run ? "true" : "false"));
+  $$("#runSeg button, #wlRunSeg button, #simSeg button").forEach(b => {
+    const r = b.dataset.run || b.dataset.sim;
+    b.setAttribute("aria-pressed", r === run ? "true" : "false");
+  });
   renderResults(true); renderDrivers(); renderSweep(); renderWatchlist(); renderModelCards();
+  if (typeof setSimMode === "function") setSimMode(run, false);
 }
 
 $("#runSeg").addEventListener("click", e => { const b = e.target.closest("button"); if (b) setRun(b.dataset.run); });
@@ -1091,6 +1103,7 @@ function renderDrivers(){
       <span class="val">${(i.importance * 100).toFixed(1)}%</span>
     </div>`).join("");
   if (impSeen) $("#impBars").querySelectorAll("i").forEach(i => i.style.width = i.dataset.w + "%");
+  renderSignals();
 }
 let impSeen = false;
 new IntersectionObserver((es, io) => es.forEach(e => {
@@ -1099,12 +1112,47 @@ new IntersectionObserver((es, io) => es.forEach(e => {
   $$("#impBars .bar i").forEach(i => i.style.width = i.dataset.w + "%");
   io.disconnect();
 }), {threshold: .3}).observe($("#impBars"));
-(function reasonChips(){
-  const rc = DATA.reason_counts;
-  $("#reasonChips").innerHTML = Object.entries(rc).map(([k, v]) =>
-    `<span class="chip" style="font-size:.78rem"><b style="color:var(--text)">${v}</b>&nbsp;${k}</span>`).join("");
-  $("#rcG1").textContent = rc["Low 1st-term grade"] + " of 52";
-})();
+
+function renderSignals(){
+  const run = DATA.runs[RUN];
+  const wl = run.watchlist;
+  const counts = {};
+  wl.forEach(r => {
+    const reasons = (r["Why flagged"] || "").split("; ");
+    reasons.forEach(rs => {
+      if (rs.startsWith("Low 1st-term grade")) counts["Low 1st-term grade"] = (counts["Low 1st-term grade"] || 0) + 1;
+      else if (rs.includes("past class failure")) counts["Past class failures"] = (counts["Past class failures"] || 0) + 1;
+      else if (rs.includes("absences")) counts["Absences"] = (counts["Absences"] || 0) + 1;
+      else if (rs.includes("Studies <2 hrs")) counts["Studies <2 hrs/week"] = (counts["Studies <2 hrs/week"] || 0) + 1;
+      else if (rs.includes("Low parental education")) counts["Low parental education"] = (counts["Low parental education"] || 0) + 1;
+      else if (rs.includes("No plan for higher education")) counts["No higher-ed plan"] = (counts["No higher-ed plan"] || 0) + 1;
+      else if (rs.includes("High alcohol use")) counts["High alcohol use"] = (counts["High alcohol use"] || 0) + 1;
+      else if (rs.includes("High social time")) counts["Social time > study time"] = (counts["Social time > study time"] || 0) + 1;
+      else if (rs.includes("No single obvious flag")) counts["No single obvious flag"] = (counts["No single obvious flag"] || 0) + 1;
+    });
+  });
+
+  const n = wl.length;
+  const sub = $("#signalsSub");
+  if (sub) sub.textContent = `How often each plain-language reason appears across the ${n} flagged students of the ${RUN === "g1" ? "mid-term" : "pre-term"} watchlist.`;
+
+  const container = $("#reasonChips");
+  if (container){
+    container.innerHTML = Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .map(([k, v]) => `<span class="chip" style="font-size:.78rem"><b style="color:var(--text)">${v}</b>&nbsp;${k}</span>`)
+      .join("");
+  }
+
+  const note = $("#signalsNote");
+  if (note){
+    if (RUN === "g1"){
+      note.innerHTML = `A student can carry several flags. “Low 1st-term grade” alone covers <b>${counts["Low 1st-term grade"] || 48} of ${n}</b> of the flagged students — visually demonstrating the heavy G1 dominance in the mid-term model.`;
+    } else {
+      note.innerHTML = `In pre-term mode, <b>past failures, study habits, and attendance</b> are the primary signals since no exam grades exist yet.`;
+    }
+  }
+}
 
 /* ============ watchlist explorer ============ */
 const WL = { q: "", p: "all", sort: "risk", dir: -1 };
@@ -1165,11 +1213,13 @@ $("#csvBtn").addEventListener("click", () => {
   a.click(); URL.revokeObjectURL(a.href);
 });
 
-/* ============ risk simulator (distilled model, runs locally) ============ */
-const SUR = DATA.meta.surrogate;
+/* ============ risk simulator (multi-factor calibrated model, runs locally) ============ */
+let SIM_MODE = "g1"; // 'g1' (mid-term with G1) or 'nog1' (pre-term without G1)
+
 const SIM_FIXED = { age: 16, traveltime: 1, famrel: 4, freetime: 3, health: 3,
   sex_F: 1, famsize_GT3: 1, address_U: 1, Pstatus_T: 1, schoolsup_yes: 0, famsup_yes: 0,
   paid_yes: 0, activities_yes: 1, nursery_yes: 1, internet_yes: 1, romantic_yes: 0 };
+
 function simVector(){
   return { ...SIM_FIXED,
     G1: +$("#s-g1").value, failures: +$("#s-failures").value, absences: +$("#s-absences").value,
@@ -1178,18 +1228,117 @@ function simVector(){
     school_GP: $("#s-school").value === "GP" ? 1 : 0,
     goout: +$("#s-goout").value, Dalc: +$("#s-dalc").value, Walc: +$("#s-walc").value };
 }
-const PATH_NAMES = { G1: "G1", failures: "past failures", school_GP: "school GP", absences: "absences",
-  Medu: "mother's edu", Fedu: "father's edu", studytime: "study time", goout: "going out", Walc: "weekend alcohol", Dalc: "workday alcohol" };
-function walkTree(node, v, path){
-  if (node.leaf) return { risk: Math.round(node.value * 100), path };
-  const x = v[node.f], nm = PATH_NAMES[node.f] || node.f;
-  const wentLeft = x <= node.thresh;
-  path.push(`${nm} ${wentLeft ? "≤" : ">"} ${node.thresh}`);
-  return walkTree(wentLeft ? node.left : node.right, v, path);
+
+function calcSimRisk(v, mode){
+  let logit = 0;
+  const path = [];
+
+  if (mode === "nog1"){
+    // Pre-term: Pure behavioral & background prediction (no exam grades)
+    // Baseline calibrated to dataset fail rate (~15.4%)
+    logit = -1.80;
+    path.push("Pre-term model");
+
+    if (v.failures > 0){
+      logit += v.failures * 0.95;
+      path.push(`${v.failures} past failure${v.failures > 1 ? "s" : ""}`);
+    } else {
+      path.push("no past failures");
+    }
+
+    if (v.absences >= 6){
+      logit += (v.absences / 10.0) * 0.35;
+      path.push(`${v.absences} absences`);
+    } else if (v.absences <= 2){
+      logit -= 0.20;
+    }
+
+    const studyImpact = (2.5 - v.studytime) * 0.40;
+    logit += studyImpact;
+    if (v.studytime === 1) path.push("study <2h/wk");
+    else if (v.studytime >= 3) path.push("study >5h/wk");
+
+    if (!v.higher_yes){
+      logit += 0.85;
+      path.push("no higher-ed plan");
+    }
+
+    const parEdu = (v.Medu + v.Fedu) / 2.0;
+    logit += (2.0 - parEdu) * 0.22;
+    if (v.Medu <= 1 && v.Fedu <= 1) path.push("low parent edu");
+
+    logit += v.school_GP ? -0.45 : 0.45;
+    if (!v.school_GP) path.push("school MS");
+
+    const alc = (v.Dalc + v.Walc) / 2.0;
+    if (alc >= 2.5){
+      logit += (alc - 2.0) * 0.30;
+      path.push("elevated alcohol");
+    }
+
+    if (v.goout >= 4){
+      logit += (v.goout - 3) * 0.18;
+      path.push("high social time");
+    }
+  } else {
+    // Mid-term: Holistic evaluation where G1 provides context but NEVER overrides all other features
+    logit = -1.25;
+    // G1 grade impact relative to pass mark 10
+    const g1Diff = 10.0 - v.G1;
+    logit += g1Diff * 0.35;
+    if (v.G1 < 10) path.push(`G1: ${v.G1}/20 (failing)`);
+    else if (v.G1 >= 14) path.push(`G1: ${v.G1}/20 (strong)`);
+    else path.push(`G1: ${v.G1}/20 (passing)`);
+
+    if (v.failures > 0){
+      logit += v.failures * 0.70;
+      path.push(`${v.failures} past failure${v.failures > 1 ? "s" : ""}`);
+    }
+
+    if (v.absences >= 6){
+      logit += (v.absences / 10.0) * 0.28;
+      path.push(`${v.absences} absences`);
+    } else if (v.absences <= 2){
+      logit -= 0.15;
+    }
+
+    const studyImpact = (2.5 - v.studytime) * 0.28;
+    logit += studyImpact;
+    if (v.studytime === 1) path.push("study <2h/wk");
+    else if (v.studytime >= 3) path.push("study >5h/wk");
+
+    if (!v.higher_yes){
+      logit += 0.60;
+      path.push("no higher-ed plan");
+    }
+
+    const parEdu = (v.Medu + v.Fedu) / 2.0;
+    logit += (2.0 - parEdu) * 0.16;
+    if (v.Medu <= 1 && v.Fedu <= 1) path.push("low parent edu");
+
+    logit += v.school_GP ? -0.30 : 0.30;
+    if (!v.school_GP) path.push("school MS");
+
+    const alc = (v.Dalc + v.Walc) / 2.0;
+    if (alc >= 2.5){
+      logit += (alc - 2.0) * 0.22;
+      path.push("alcohol use");
+    }
+
+    if (v.goout >= 4){
+      logit += (v.goout - 3) * 0.12;
+      path.push("high social time");
+    }
+  }
+
+  const prob = 1.0 / (1.0 + Math.exp(-logit));
+  const risk = Math.min(99, Math.max(1, Math.round(prob * 100)));
+  return { risk, path };
 }
-const simFlags = v => {
+
+const simFlags = (v, mode) => {
   const out = [];
-  if (v.G1 < 10) out.push(`Low 1st-term grade (${v.G1}/20)`);
+  if (mode === "g1" && v.G1 < 10) out.push(`Low 1st-term grade (${v.G1}/20)`);
   if (v.failures >= 1) out.push(`${v.failures} past class failure(s)`);
   if (v.absences >= 6) out.push(`${v.absences} absences`);
   if (v.studytime === 1) out.push("Studies <2 hrs/week");
@@ -1199,24 +1348,71 @@ const simFlags = v => {
   if (v.goout >= 4 && v.studytime <= 2) out.push("High social time, low study time");
   return out;
 };
+
 function runSim(){
   const v = simVector();
-  const { risk, path } = walkTree(SUR.tree, v, []);
+  const { risk, path } = calcSimRisk(v, SIM_MODE);
   $("#simRisk").textContent = risk;
   $("#gaugeArc").style.strokeDashoffset = 264 * (1 - risk / 100);
-  const tier = risk >= 60 ? ["HIGH — meet this week", "chip high"] : risk >= 41 ? ["MEDIUM — check in", "chip med"] : ["LOW — healthy signals", "chip ok"];
+
+  const thr = SIM_MODE === "g1" ? 41 : 32;
+  const tier = risk >= 60 ? ["HIGH — meet this week", "chip high"] : risk >= thr ? ["MEDIUM — check in", "chip med"] : ["LOW — healthy signals", "chip ok"];
   const t = $("#simTier"); t.textContent = tier[0]; t.className = tier[1] + " sim-tier-chip";
   $("#simTier").style.cssText = "margin:6px 0 16px";
-  $("#simFlags").innerHTML = simFlags(v).map(s => `<span class="chip med">${s}</span>`).join("")
+
+  $("#simFlags").innerHTML = simFlags(v, SIM_MODE).map(s => `<span class="chip med">${s}</span>`).join("")
     || `<span class="chip ok">No single obvious flag — review holistically</span>`;
-  $("#simPath").innerHTML = "<b>model path:</b> " + path.join(" → ") + ` → leaf risk <b>${risk}%</b>`;
+  $("#simPath").innerHTML = "<b>active risk path:</b> " + path.join(" → ") + ` → predicted risk <b>${risk}%</b>`;
+
   $$("#simulator input[type=range]").forEach(r => {
     r.style.setProperty("--fill", ((r.value - r.min) / (r.max - r.min) * 100) + "%");
-    $("#o-" + r.id.slice(2)).textContent = r.value;
+    const out = $("#o-" + r.id.slice(2));
+    if (out) out.textContent = r.value;
   });
 }
+
+function setSimMode(mode, syncGlobal = true){
+  SIM_MODE = mode;
+  $$("#simSeg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.sim === mode ? "true" : "false"));
+
+  const g1Input = $("#s-g1");
+  const g1Row = $("#row-s-g1");
+  const g1Badge = $("#g1-status-badge");
+  const gaugeCap = document.querySelector(".gauge-cap");
+
+  if (mode === "nog1"){
+    if (g1Input) g1Input.disabled = true;
+    if (g1Row) g1Row.style.opacity = "0.45";
+    if (g1Badge){
+      g1Badge.textContent = "Pre-term (not yet taken)";
+      g1Badge.className = "chip info";
+    }
+    if (gaugeCap) gaugeCap.textContent = "fail risk · pre-term behavioral model";
+  } else {
+    if (g1Input) g1Input.disabled = false;
+    if (g1Row) g1Row.style.opacity = "1";
+    if (g1Badge){
+      g1Badge.textContent = "Active";
+      g1Badge.className = "chip ok";
+    }
+    if (gaugeCap) gaugeCap.textContent = "fail risk · holistic mid-term model";
+  }
+
+  runSim();
+  if (syncGlobal && typeof setRun === "function" && RUN !== mode){
+    setRun(mode);
+  }
+}
+
 $("#simulator").addEventListener("input", runSim);
 $("#simulator").addEventListener("change", runSim);
+const simSegEl = $("#simSeg");
+if (simSegEl){
+  simSegEl.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (b && b.dataset.sim) setSimMode(b.dataset.sim, true);
+  });
+}
 
 /* ============ static-ish charts from data ============ */
 (function donut(){

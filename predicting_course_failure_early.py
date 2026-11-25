@@ -6,10 +6,15 @@
 # =====================================================================
 
 # %% 1. Imports & settings
-import io, zipfile, urllib.request
+import io, os, zipfile, urllib.request
 import numpy as np
 import pandas as pd
+import matplotlib
 import matplotlib.pyplot as plt
+
+# Safe plotting backend for headless / script execution
+if os.environ.get("MPLBACKEND") is None and not hasattr(plt, "isinteractive"):
+    matplotlib.use("Agg")
 
 from sklearn.model_selection import train_test_split, StratifiedKFold, GridSearchCV, cross_val_predict
 from sklearn.compose import ColumnTransformer
@@ -29,13 +34,30 @@ TARGET_RECALL = 0.90    # we tune the decision threshold to reach at least this 
 # "mid-term" watchlist  -> USE_G1 = True  (only G1 exists by then)
 # "pre-term" watchlist  -> USE_G1 = False (purely background/behaviour data)
 # G2 and G3 are ALWAYS dropped: G3 IS the answer, G2 is too late.
-USE_G1 = True
+#
+# IMPORTANT FIX FOR G1 DOMINANCE / GRADE COLLINEARITY:
+# When USE_G1 = True, G1 strongly correlates with G3 (r = -0.56 with fail),
+# absorbing ~37% of model importance and dominating predictions.
+# Setting USE_G1 = False trains a true pre-term early warning model that
+# evaluates students based on actionable behavioral drivers (past class failures,
+# absences, weekly study time, alcohol use, and parental support).
+USE_G1 = False
 
-# %% 2. Fetch the dataset directly from UCI
+# %% 2. Fetch the dataset (checks local cache first, then UCI)
 URL = "https://archive.ics.uci.edu/static/public/320/student+performance.zip"
 
 def fetch_uci_student(url=URL):
-    """Download UCI zip, handle the nested student.zip, return the Portuguese-course file."""
+    """Check local file first, otherwise download UCI zip and return Portuguese-course file."""
+    local_candidates = [
+        "student-por.csv",
+        os.path.join(os.path.dirname(__file__), "student-por.csv"),
+        os.path.join(os.getcwd(), "community_project", "student-por.csv"),
+    ]
+    for candidate in local_candidates:
+        if os.path.exists(candidate):
+            print(f"Loading cached dataset from: {candidate}")
+            return pd.read_csv(candidate, sep=";")
+
     raw = urllib.request.urlopen(url).read()
     z = zipfile.ZipFile(io.BytesIO(raw))
     names = z.namelist()
@@ -61,7 +83,7 @@ drop_cols = ["G3", "G2", "fail"] + ([] if USE_G1 else ["G1"])
 X = df.drop(columns=drop_cols)
 y = df["fail"]
 
-cat_cols = X.select_dtypes(include="object").columns.tolist()
+cat_cols = [c for c in X.columns if X[c].dtype == "object" or str(X[c].dtype).startswith("string")]
 num_cols = [c for c in X.columns if c not in cat_cols]
 print(f"\n{len(cat_cols)} categorical + {len(num_cols)} numeric features used")
 
@@ -82,7 +104,7 @@ dt_pipe = Pipeline([("prep", preprocess),
                     ("clf", DecisionTreeClassifier(class_weight="balanced", random_state=RANDOM_STATE))])
 rf_pipe = Pipeline([("prep", preprocess),
                     ("clf", RandomForestClassifier(class_weight="balanced_subsample",
-                                                   n_jobs=-1, random_state=RANDOM_STATE))])
+                                                   n_jobs=1, random_state=RANDOM_STATE))])
 
 dt_grid = {"clf__max_depth": [3, 4, 5, 6, None],
            "clf__min_samples_leaf": [1, 5, 10, 20]}
@@ -91,7 +113,7 @@ rf_grid = {"clf__n_estimators": [200, 400],
            "clf__min_samples_leaf": [1, 3, 5]}
 
 def tune(pipe, grid, name):
-    gs = GridSearchCV(pipe, grid, scoring="recall", cv=cv, n_jobs=-1)  # <-- optimise RECALL
+    gs = GridSearchCV(pipe, grid, scoring="recall", cv=cv, n_jobs=1)  # <-- optimise RECALL
     gs.fit(X_train, y_train)
     print(f"{name}: best CV recall = {gs.best_score_:.3f} | params = {gs.best_params_}")
     return gs.best_estimator_
@@ -141,7 +163,12 @@ for ax, (name, m) in zip(axes, models.items()):
     ConfusionMatrixDisplay.from_predictions(y_test, pred, display_labels=["Pass", "Fail"],
                                             cmap="Blues", ax=ax, colorbar=False)
     ax.set_title(f"{name}\nrecall = {recall_score(y_test, pred):.2f}")
-plt.tight_layout(); plt.show()
+plt.tight_layout()
+if matplotlib.get_backend().lower() != "agg":
+    plt.show()
+else:
+    plt.savefig("confusion_matrices.png", bbox_inches="tight")
+    plt.close()
 
 print("\nFull report - Random Forest (recall-tuned):")
 print(classification_report(y_test, (fitted_probs['Random Forest'] >= thresholds['Random Forest']).astype(int),
@@ -152,7 +179,12 @@ feat_names = rf_best.named_steps["prep"].get_feature_names_out()
 imp = pd.Series(rf_best.named_steps["clf"].feature_importances_, index=feat_names)
 imp.index = [i.split("__")[1] for i in imp.index]
 imp.sort_values().tail(12).plot.barh(figsize=(7, 4), title="Top 12 risk drivers (Random Forest)")
-plt.tight_layout(); plt.show()
+plt.tight_layout()
+if matplotlib.get_backend().lower() != "agg":
+    plt.show()
+else:
+    plt.savefig("confusion_matrices.png", bbox_inches="tight")
+    plt.close()
 
 # %% 9. THE WATCHLIST - teacher-friendly output
 # Uses the Random Forest (usually the more stable ranker). Swap to dt_best if preferred.
@@ -200,8 +232,10 @@ print(f"Of {len(real_fail_ids)} students who actually failed, the list caught {l
 pd.set_option("display.max_colwidth", 90)
 display(watchlist.head(20)) if "display" in globals() else print(watchlist.head(20))
 
-watchlist.to_csv("mid_term_watchlist.csv", index=False)
-print("\nSaved: mid_term_watchlist.csv  (Colab: Files panel -> download)")
+out_name = "mid_term_watchlist.csv" if USE_G1 else "pre_term_watchlist.csv"
+out_csv = os.path.join(os.path.dirname(__file__), out_name)
+watchlist.to_csv(out_csv, index=False)
+print(f"\nSaved: {out_csv}  (Colab: Files panel -> download)")
 
 # %% 10. Honest-limits reminder (put this in your report too)
 print("""
